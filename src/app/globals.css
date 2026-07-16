@@ -1,0 +1,156 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --primary: #355e3b;
+  --primary-foreground: #fefcf3;
+  --secondary: #739072;
+  --secondary-foreground: #fefcf3;
+  --accent: #a9b388;
+  --accent-foreground: #1f2937;
+  --background: #fefcf3;
+  --foreground: #374151;
+  --surface: #ffffff;
+  --card: #ffffff;
+  --card-foreground: #374151;
+  --popover: #ffffff;
+  --popover-foreground: #374151;
+  --muted: #f5f3eb;
+  --muted-foreground: #6b7280;
+  --border: #e8e5dd;
+  --input: #e8e5dd;
+  --ring: #355e3b;
+  --heading: #1f2937;
+  --destructive: #dc2626;
+  --destructive-foreground: #fefcf3;
+  --success: #16a34a;
+  --warning: #d97706;
+  --radius: 0.75rem;
+  --shadow-soft: 0 4px 24px -4px rgb(53 94 59 / 0.08);
+  --shadow-lift: 0 12px 40px -8px rgb(53 94 59 / 0.15);
+  --glass: rgb(255 255 255 / 0.72);
+}
+
+.dark {
+  --primary: #739072;
+  --primary-foreground: #fefcf3;
+  --secondary: #355e3b;
+  --secondary-foreground: #fefcf3;
+  --accent: #a9b388;
+  --accent-foreground: #1f2937;
+  --background: #111827;
+  --foreground: #e5e7eb;
+  --surface: #1f2937;
+  --card: #1f2937;
+  --card-foreground: #e5e7eb;
+  --popover: #1f2937;
+  --popover-foreground: #e5e7eb;
+  --muted: #374151;
+  --muted-foreground: #9ca3af;
+  --border: #374151;
+  --input: #374151;
+  --ring: #739072;
+  --heading: #f9fafb;
+  --destructive: #ef4444;
+  --destructive-foreground: #fefcf3;
+  --glass: rgb(31 41 55 / 0.72);
+}
+
+@theme inline {
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-heading: var(--heading);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+  --font-button: var(--font-button);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --shadow-soft: var(--shadow-soft);
+  --shadow-lift: var(--shadow-lift);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-[family-name:var(--font-body)] antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-[family-name:var(--font-heading)] text-heading tracking-tight;
+  }
+}
+
+@layer utilities {
+  .font-heading {
+    font-family: var(--font-heading), Georgia, serif;
+  }
+
+  .font-body {
+    font-family: var(--font-body), system-ui, sans-serif;
+  }
+
+  .font-button {
+    font-family: var(--font-button), system-ui, sans-serif;
+  }
+
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-lift {
+    box-shadow: var(--shadow-lift);
+  }
+
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .section-padding {
+    @apply px-4 sm:px-6 lg:px-8 py-16 md:py-24;
+  }
+
+  .container-rootora {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+}

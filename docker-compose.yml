@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: rootora-db
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: rootora
+      POSTGRES_PASSWORD: rootora
+      POSTGRES_DB: rootora
+    volumes:
+      - rootora_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rootora -d rootora"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  rootora_pg_data:

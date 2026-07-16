@@ -1,0 +1,478 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  COD
+  SSLCOMMERZ
+  BKASH
+  NAGAD
+  STRIPE
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  phone         String?
+  role          String    @default("CUSTOMER")
+  banned        Boolean?  @default(false)
+  banReason     String?
+  banExpires    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions      Session[]
+  accounts      Account[]
+  orders        Order[]
+  reviews       Review[]
+  addresses     Address[]
+  wishlist      WishlistItem[]
+  cart          CartItem[]
+  notifications Notification[]
+
+  @@index([role])
+  @@map("user")
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  name        String
+  slug        String           @unique
+  description String?
+  isSystem    Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  key         String           @unique
+  name        String
+  module      String
+  description String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  roles       RolePermission[]
+
+  @@index([module])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verification")
+}
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  description String?
+  image       String?
+  parentId    String?
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("categories")
+}
+
+model Farmer {
+  id           String    @id @default(cuid())
+  name         String
+  slug         String    @unique
+  village      String
+  district     String
+  story        String    @db.Text
+  image        String?
+  gallery      String[]
+  verified     Boolean   @default(false)
+  userId       String?   @unique
+  products     Product[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("farmers")
+}
+
+model Product {
+  id                   String           @id @default(cuid())
+  name                 String
+  slug                 String           @unique
+  description          String           @db.Text
+  shortDescription     String?
+  productStory         String?          @db.Text
+  productType          String?
+  status               ProductStatus    @default(DRAFT)
+  price                Decimal          @db.Decimal(10, 2)
+  originalPrice        Decimal?         @db.Decimal(10, 2)
+  salePrice            Decimal?         @db.Decimal(10, 2)
+  costPrice            Decimal?         @db.Decimal(10, 2)
+  wholesalePrice       Decimal?         @db.Decimal(10, 2)
+  tax                  Decimal?         @db.Decimal(10, 2)
+  discountType         String?
+  discountAmount       Decimal?         @db.Decimal(10, 2)
+  images               String[]
+  thumbnail            String?
+  hoverImage           String?
+  videoUrl             String?
+  categoryId           String
+  category             Category         @relation(fields: [categoryId], references: [id])
+  subcategory          String?
+  childCategory        String?
+  collection           String?
+  brand                String?
+  farmerId             String?
+  farmer               Farmer?          @relation(fields: [farmerId], references: [id])
+  sku                  String?          @unique
+  barcode              String?
+  stockCount           Int              @default(0)
+  stockStatus          String           @default("in_stock")
+  inStock              Boolean          @default(true)
+  lowStockAlert        Int              @default(5)
+  minOrderQty          Int              @default(1)
+  maxOrderQty          Int?
+  weight               Decimal?         @db.Decimal(10, 3)
+  length               Decimal?         @db.Decimal(10, 2)
+  width                Decimal?         @db.Decimal(10, 2)
+  height               Decimal?         @db.Decimal(10, 2)
+  organic              Boolean          @default(false)
+  certificateNumber    String?
+  certificateUrl       String?
+  harvestDate          DateTime?
+  expiryDate           DateTime?
+  bestBefore           DateTime?
+  storageInstruction   String?          @db.Text
+  unit                 String?
+  origin               String?
+  country              String?          @default("Bangladesh")
+  originDistrict       String?
+  originBadge          String?
+  latitude             Decimal?         @db.Decimal(10, 7)
+  longitude            Decimal?         @db.Decimal(10, 7)
+  tags                 String[]
+  featured             Boolean          @default(false)
+  trending             Boolean          @default(false)
+  bestSeller           Boolean          @default(false)
+  freshToday           Boolean          @default(false)
+  todaysDeal           Boolean          @default(false)
+  newArrival           Boolean          @default(false)
+  seasonal             Boolean          @default(false)
+  limitedEdition       Boolean          @default(false)
+  imported             Boolean          @default(false)
+  local                Boolean          @default(true)
+  deliveryTime         String?
+  shippingClass        String?
+  shippingCharge       Decimal?         @db.Decimal(10, 2)
+  codAvailable         Boolean          @default(true)
+  freeShipping         Boolean          @default(false)
+  returnAvailable      Boolean          @default(true)
+  replacementAvailable Boolean          @default(false)
+  farmerDistrict       String?
+  farmerUpazila        String?
+  farmName             String?
+  farmStory            String?          @db.Text
+  farmImages           String[]
+  nutrition            Json?
+  ingredients          String[]
+  allergens            String[]
+  shelfLife            String?
+  freshlyMade          Boolean          @default(false)
+  madeDate             DateTime?
+  keepRefrigerated     Boolean          @default(false)
+  sweetCategory        String?
+  deliveryArea         String?
+  seoTitle             String?
+  seoDescription       String?
+  seoKeywords          String?
+  canonicalUrl         String?
+  ogImage              String?
+  publishedAt          DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  reviews              Review[]
+  orderItems           OrderItem[]
+  cartItems            CartItem[]
+  wishlistItems        WishlistItem[]
+  variants             ProductVariant[]
+
+  @@index([categoryId])
+  @@index([farmerId])
+  @@index([slug])
+  @@index([status])
+  @@map("products")
+}
+
+model ProductVariant {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name       String
+  value      String
+  image      String?
+  price      Decimal? @db.Decimal(10, 2)
+  salePrice  Decimal? @db.Decimal(10, 2)
+  stockCount Int      @default(0)
+  sku        String?  @unique
+
+  @@map("product_variants")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String   @db.Text
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId])
+  @@map("reviews")
+}
+
+model Address {
+  id           String  @id @default(cuid())
+  userId       String?
+  user         User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label        String
+  name         String
+  phone        String
+  addressLine1 String
+  addressLine2 String?
+  district     String
+  postalCode   String
+  isDefault    Boolean @default(false)
+  orders       Order[]
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+model Order {
+  id            String         @id @default(cuid())
+  orderNumber   String         @unique
+  /// Null for guest (checkout without login) orders
+  userId        String?
+  user          User?          @relation(fields: [userId], references: [id])
+  /// Opaque token so guests can view success + download invoice
+  accessToken   String         @unique @default(cuid())
+  guestEmail    String?
+  status        OrderStatus    @default(PENDING)
+  paymentStatus PaymentStatus  @default(PENDING)
+  paymentMethod PaymentMethod?
+  subtotal      Decimal        @db.Decimal(10, 2)
+  shipping      Decimal        @db.Decimal(10, 2) @default(0)
+  discount      Decimal        @db.Decimal(10, 2) @default(0)
+  total         Decimal        @db.Decimal(10, 2)
+  couponId      String?
+  coupon        Coupon?        @relation(fields: [couponId], references: [id])
+  addressId     String
+  address       Address        @relation(fields: [addressId], references: [id])
+  notes         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  items         OrderItem[]
+
+  @@index([userId])
+  @@index([orderNumber])
+  @@index([accessToken])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2)
+  variantId String?
+
+  @@map("order_items")
+}
+
+model Coupon {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  description   String?
+  discountType  String
+  discountValue Decimal   @db.Decimal(10, 2)
+  minOrder      Decimal?  @db.Decimal(10, 2)
+  maxUses       Int?
+  usedCount     Int       @default(0)
+  active        Boolean   @default(true)
+  expiresAt     DateTime?
+  createdAt     DateTime  @default(now())
+  orders        Order[]
+
+  @@map("coupons")
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int     @default(1)
+  variantId String?
+
+  @@unique([userId, productId, variantId])
+  @@map("cart_items")
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@map("wishlist_items")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  type      String
+  link      String?
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+model BlogPost {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  excerpt     String
+  content     String    @db.Text
+  image       String?
+  author      String
+  category    String
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  readTime    Int       @default(5)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("blog_posts")
+}
+
+model Recipe {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String
+  content     String   @db.Text
+  image       String?
+  prepTime    Int
+  cookTime    Int
+  servings    Int
+  difficulty  String
+  tags        String[]
+  ingredients Json
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("recipes")
+}
