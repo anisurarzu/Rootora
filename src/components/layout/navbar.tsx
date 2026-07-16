@@ -53,12 +53,12 @@ export function Navbar() {
         )}
       >
         <nav
-          className="container-rootora flex h-16 items-center justify-between lg:h-20"
+          className="container-rootora flex h-12 items-center justify-between sm:h-14 lg:h-20"
           aria-label="Main navigation"
         >
           <Link
             href="/"
-            className="font-heading text-2xl font-bold tracking-tight text-primary lg:text-3xl"
+            className="font-heading text-xl font-bold tracking-tight text-primary sm:text-2xl lg:text-3xl"
           >
             {siteConfig.name}
           </Link>

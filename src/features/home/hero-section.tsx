@@ -156,12 +156,12 @@ export function HeroSection({ content = DEFAULT_HERO_CONTENT }: HeroSectionProps
       </div>
 
       {/* —— Mobile / tablet —— */}
-      <div className="relative z-10 mx-auto min-h-[78vh] w-full max-w-7xl lg:hidden">
+      <div className="relative z-10 mx-auto w-full max-w-7xl lg:hidden">
         {slides.length > 0 ? <HangingSwingOffer slides={slides} /> : null}
 
-        <div className="relative z-10 flex min-h-[78vh] flex-col justify-end px-4 pb-9 pt-16 sm:min-h-[72vh] sm:px-6 sm:pb-11 sm:pt-20">
+        <div className="relative z-10 px-4 pb-8 pt-4 sm:px-6 sm:pb-10 sm:pt-5">
           <motion.div
-            className="w-full max-w-[72%] sm:max-w-[70%]"
+            className="w-full max-w-[68%] sm:max-w-[66%]"
             initial="hidden"
             animate="visible"
             variants={staggerContainer}
@@ -331,7 +331,9 @@ function HangingSwingOffer({ slides }: { slides: HeroSlideData[] }) {
   /** Full pendulum before next product (slow) */
   const FULL_SWING_MS = 7000;
   const SWING_HALF_S = FULL_SWING_MS / 2000;
+  const SPIN_S = 1.85;
   const [index, setIndex] = useState(0);
+  const [spinTurns, setSpinTurns] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
@@ -346,6 +348,7 @@ function HangingSwingOffer({ slides }: { slides: HeroSlideData[] }) {
     if (slides.length <= 1 || reduceMotion) return;
     const id = window.setInterval(() => {
       setIndex((prev) => wrapIndex(prev + 1, slides.length));
+      setSpinTurns((turns) => turns + 1);
     }, FULL_SWING_MS);
     return () => window.clearInterval(id);
   }, [slides.length, reduceMotion]);
@@ -354,7 +357,7 @@ function HangingSwingOffer({ slides }: { slides: HeroSlideData[] }) {
   if (!slide) return null;
 
   return (
-    <div className="pointer-events-none absolute right-3 top-0 z-20 w-[92px] sm:right-5 sm:w-[100px]">
+    <div className="pointer-events-none absolute right-2 top-0 z-20 w-[118px] sm:right-4 sm:w-[132px]">
       <motion.div
         className="flex origin-top flex-col items-center"
         style={{ transformOrigin: "50% 0%" }}
@@ -370,40 +373,55 @@ function HangingSwingOffer({ slides }: { slides: HeroSlideData[] }) {
               }
         }
       >
-        {/* Long cord from top — card hangs mid-upper */}
-        <div className="relative flex h-[28vh] max-h-[240px] min-h-[160px] w-px flex-col items-center sm:h-[30vh] sm:min-h-[175px]">
+        <div className="relative flex h-40 w-px flex-col items-center sm:h-44">
           <span className="absolute top-0 z-10 h-2 w-2 -translate-y-1/2 rounded-full border border-white/40 bg-[#FEFCF3] shadow-[0_0_12px_rgba(254,252,243,0.55)]" />
           <span className="h-full w-px bg-gradient-to-b from-[#FEFCF3]/80 via-[#A9B388]/45 to-[#FEFCF3]/25" />
         </div>
 
-        <Link
-          href={slide.href}
-          className="pointer-events-auto relative -mt-0.5 block aspect-square w-full overflow-hidden rounded-full border border-white/45 bg-[#1a2a1e]/40 shadow-[0_14px_30px_-8px_rgba(0,0,0,0.6)] ring-1 ring-white/20"
-          aria-label={`${slide.title} — ${slide.detail}`}
+        <div
+          className="relative -mt-0.5 aspect-square w-full"
+          style={{ perspective: 1000 }}
         >
-          <Image
-            key={slide.id}
-            src={slide.image}
-            alt={slide.title}
-            fill
-            className="object-cover object-center"
-            sizes="100px"
-            priority
-            unoptimized={slide.image.startsWith("/")}
-          />
-          <div
-            className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/80"
-            aria-hidden
-          />
-          <div className="absolute inset-x-0 bottom-0 px-1.5 pb-2 pt-5 text-center">
-            <p className="font-button text-[6px] font-semibold uppercase tracking-[0.12em] text-[#C5D4A0]">
-              {slide.label}
-            </p>
-            <p className="mt-0.5 line-clamp-2 font-heading text-[9px] font-semibold leading-tight text-white">
-              {slide.title}
-            </p>
-          </div>
-        </Link>
+          {/* Same card always visible — slow 360° spin on change, no fade */}
+          <motion.div
+            className="absolute inset-0"
+            style={{ transformStyle: "preserve-3d" }}
+            animate={{ rotateY: reduceMotion ? 0 : spinTurns * 360 }}
+            transition={{
+              duration: reduceMotion ? 0 : SPIN_S,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+          >
+            <Link
+              href={slide.href}
+              className="pointer-events-auto relative block h-full w-full overflow-hidden rounded-full border border-white/45 bg-[#1a2a1e]/40 shadow-[0_14px_30px_-8px_rgba(0,0,0,0.6)] ring-1 ring-white/20"
+              aria-label={`${slide.title} — ${slide.detail}`}
+            >
+              <Image
+                key={slide.id}
+                src={slide.image}
+                alt={slide.title}
+                fill
+                className="object-cover object-center"
+                sizes="132px"
+                priority
+                unoptimized={slide.image.startsWith("/")}
+              />
+              <div
+                className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/80"
+                aria-hidden
+              />
+              <div className="absolute inset-x-0 bottom-0 px-2 pb-2.5 pt-6 text-center">
+                <p className="font-button text-[7px] font-semibold uppercase tracking-[0.12em] text-[#C5D4A0]">
+                  {slide.label}
+                </p>
+                <p className="mt-0.5 line-clamp-2 font-heading text-[11px] font-semibold leading-tight text-white sm:text-xs">
+                  {slide.title}
+                </p>
+              </div>
+            </Link>
+          </motion.div>
+        </div>
       </motion.div>
     </div>
   );
