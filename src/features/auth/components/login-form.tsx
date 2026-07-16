@@ -84,9 +84,6 @@ export function LoginForm({ nextPath }: LoginFormProps) {
         <Button type="submit" className="w-full" size="lg" disabled={loading}>
           {loading ? "Signing in..." : "Sign In with Email"}
         </Button>
-        <p className="text-center text-xs text-muted-foreground">
-          Demo admin: admin@rootora.com / Admin123!
-        </p>
       </form>
     </div>
   );

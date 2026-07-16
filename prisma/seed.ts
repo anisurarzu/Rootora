@@ -281,7 +281,7 @@ async function main() {
       },
     });
 
-    console.log(`Admin created: ${adminEmail} / ${adminPassword}`);
+    console.log(`Admin user ready: ${adminEmail}`);
   } else {
     await prisma.user.update({
       where: { email: adminEmail },
@@ -330,7 +330,7 @@ async function main() {
       },
     });
 
-    console.log(`Customer created: ${demoEmail} / ${demoPassword}`);
+    console.log(`Customer user ready: ${demoEmail}`);
   }
 
   console.log("Seed complete.");

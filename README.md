@@ -37,13 +37,6 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-### Demo accounts (seeded)
-
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | `admin@rootora.com` | `Admin123!` |
-| Customer | `customer@rootora.com` | `Customer123!` |
-
 - User area: `/account`
 - Admin panel: `/admin`
 - Auth: `/login`, `/register` (email/password + Google OAuth ready)
