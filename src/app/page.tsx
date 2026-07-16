@@ -2,6 +2,7 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { FeaturedBlogs } from "@/features/home/featured-blogs";
 import { FeaturedCategories } from "@/features/home/featured-categories";
 import { FarmerStories } from "@/features/home/farmer-stories";
+import { getHeroContent } from "@/features/home/hero";
 import { HeroSection } from "@/features/home/hero-section";
 import { InstagramGallery } from "@/features/home/instagram-gallery";
 import { NewsletterSection } from "@/features/home/newsletter-section";
@@ -18,11 +19,22 @@ import {
 } from "@/lib/mock-data";
 import { siteConfig } from "@/config/site";
 
-export default function HomePage() {
-  const seasonalProducts = getSeasonalProducts();
-  const freshToday = getFreshToday();
-  const bestSellers = getBestSellers();
-  const organicProducts = getOrganicProducts().slice(0, 4);
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const [
+    heroContent,
+    seasonalProducts,
+    freshToday,
+    bestSellers,
+    organicProducts,
+  ] = await Promise.all([
+    getHeroContent(),
+    Promise.resolve(getSeasonalProducts()),
+    Promise.resolve(getFreshToday()),
+    Promise.resolve(getBestSellers()),
+    Promise.resolve(getOrganicProducts().slice(0, 4)),
+  ]);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -44,7 +56,7 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <HeroSection />
+      <HeroSection content={heroContent} />
       <FeaturedCategories />
 
       {seasonalProducts.length > 0 && (

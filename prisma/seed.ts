@@ -7,6 +7,7 @@ import {
   products,
   recipes,
 } from "../src/lib/mock-data";
+import { ensureHeroDefaults } from "../src/features/home/hero";
 import { PERMISSIONS, SYSTEM_ROLES } from "../src/lib/permissions";
 
 const prisma = new PrismaClient();
@@ -76,6 +77,8 @@ async function main() {
   console.log("Seeding ROOTORA database...");
 
   await seedRolesAndPermissions();
+  await ensureHeroDefaults();
+  console.log("Homepage hero defaults ready.");
 
   for (const category of categories) {
     await prisma.category.upsert({

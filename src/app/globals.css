@@ -99,10 +99,12 @@
 
   html {
     @apply scroll-smooth;
+    overflow-x: clip;
   }
 
   body {
     @apply bg-background text-foreground font-[family-name:var(--font-body)] antialiased;
+    overflow-x: clip;
   }
 
   h1,

@@ -27,33 +27,33 @@ export function FeaturedCategories() {
           whileInView="visible"
           viewport={viewportOnce}
           variants={staggerContainer}
-          className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 lg:gap-6"
+          className="mx-auto grid max-w-5xl grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 lg:gap-4"
         >
           {categories.map((category) => (
             <motion.div key={category.id} variants={fadeInUp}>
               <Link
                 href={`/shop?category=${category.slug}`}
-                className="group relative block aspect-[3/4] overflow-hidden rounded-xl"
+                className="group relative block aspect-[4/5] overflow-hidden rounded-lg sm:rounded-xl"
               >
                 <Image
                   src={category.image}
                   alt={category.name}
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                  sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 200px"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-4 md:p-5">
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <h3 className="font-heading text-lg font-semibold text-white md:text-xl">
+                <div className="absolute inset-x-0 bottom-0 p-2.5 sm:p-3">
+                  <div className="flex items-end justify-between gap-1">
+                    <div className="min-w-0">
+                      <h3 className="truncate font-heading text-sm font-semibold text-white sm:text-base">
                         {category.name}
                       </h3>
-                      <p className="mt-1 text-xs text-white/70 md:text-sm">
+                      <p className="mt-0.5 text-[10px] text-white/70 sm:text-xs">
                         {category.productCount} products
                       </p>
                     </div>
-                    <ArrowUpRight className="h-5 w-5 text-white opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    <ArrowUpRight className="h-4 w-4 shrink-0 text-white opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   </div>
                 </div>
               </Link>

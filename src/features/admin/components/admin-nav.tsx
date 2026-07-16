@@ -6,6 +6,7 @@ import {
   FolderTree,
   LayoutDashboard,
   Package,
+  PanelTop,
   Settings,
   ShoppingCart,
   Sprout,
@@ -15,6 +16,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/admin/homepage", label: "Homepage", icon: PanelTop },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/customers", label: "Customers", icon: Users },

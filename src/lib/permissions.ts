@@ -113,6 +113,12 @@ export const PERMISSIONS = [
     module: "Settings",
     description: "Can access admin settings",
   },
+  {
+    key: "content.manage",
+    name: "Manage homepage content",
+    module: "Content",
+    description: "Can edit hero, banners, and CMS homepage sections",
+  },
 ] as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[number]["key"];
@@ -145,6 +151,7 @@ export const SYSTEM_ROLES = {
       "farmers.view",
       "farmers.manage",
       "settings.manage",
+      "content.manage",
     ] satisfies PermissionKey[],
   },
   EDITOR: {
@@ -162,6 +169,7 @@ export const SYSTEM_ROLES = {
       "categories.manage",
       "farmers.view",
       "farmers.manage",
+      "content.manage",
     ] satisfies PermissionKey[],
   },
   CUSTOMER: {

@@ -476,3 +476,39 @@ model Recipe {
 
   @@map("recipes")
 }
+
+/// Homepage hero CMS (singleton row id = "default")
+model HeroSettings {
+  id                  String      @id @default("default")
+  brandName           String      @default("ROOTORA")
+  tagline             String      @default("Naturally Bangladeshi.")
+  headline            String      @default("From Bangladeshi farms to your table")
+  description         String      @default("Organic foods and artisan goods, sourced directly from local farmers.")
+  ctaPrimaryLabel     String      @default("Shop collection")
+  ctaPrimaryHref      String      @default("/shop")
+  ctaSecondaryLabel   String      @default("Meet our farmers")
+  ctaSecondaryHref    String      @default("/farmers")
+  backgroundImage     String      @default("/images/hero-produce-original.png")
+  updatedAt           DateTime    @updatedAt
+  slides              HeroSlide[]
+
+  @@map("hero_settings")
+}
+
+model HeroSlide {
+  id        String       @id @default(cuid())
+  heroId    String       @default("default")
+  hero      HeroSettings @relation(fields: [heroId], references: [id], onDelete: Cascade)
+  image     String
+  label     String
+  title     String
+  detail    String
+  href      String
+  sortOrder Int          @default(0)
+  active    Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([heroId, sortOrder])
+  @@map("hero_slides")
+}
