@@ -159,7 +159,7 @@ export function HeroSection({ content = DEFAULT_HERO_CONTENT }: HeroSectionProps
       <div className="relative z-10 mx-auto w-full max-w-7xl lg:hidden">
         {slides.length > 0 ? <HangingSwingOffer slides={slides} /> : null}
 
-        <div className="relative z-10 px-4 pb-8 pt-4 sm:px-6 sm:pb-10 sm:pt-5">
+        <div className="relative z-10 px-4 pb-8 pt-7 sm:px-6 sm:pb-10 sm:pt-8">
           <motion.div
             className="w-full max-w-[68%] sm:max-w-[66%]"
             initial="hidden"

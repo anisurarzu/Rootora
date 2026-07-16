@@ -6,6 +6,7 @@ interface SectionHeadingProps {
   description?: string;
   align?: "left" | "center";
   className?: string;
+  descriptionClassName?: string;
 }
 
 export function SectionHeading({
@@ -14,6 +15,7 @@ export function SectionHeading({
   description,
   align = "center",
   className,
+  descriptionClassName,
 }: SectionHeadingProps) {
   return (
     <div
@@ -35,7 +37,8 @@ export function SectionHeading({
         <p
           className={cn(
             "mt-4 max-w-2xl text-base text-muted-foreground md:text-lg",
-            align === "center" && "mx-auto"
+            align === "center" && "mx-auto",
+            descriptionClassName
           )}
         >
           {description}
