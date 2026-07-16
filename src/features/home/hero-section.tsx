@@ -331,7 +331,7 @@ function HangingSwingOffer({ slides }: { slides: HeroSlideData[] }) {
   /** Full pendulum before next product (slow) */
   const FULL_SWING_MS = 7000;
   const SWING_HALF_S = FULL_SWING_MS / 2000;
-  const SPIN_S = 1.85;
+  const SPIN_S = 2.9;
   const [index, setIndex] = useState(0);
   const [spinTurns, setSpinTurns] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
