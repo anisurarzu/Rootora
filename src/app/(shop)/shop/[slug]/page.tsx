@@ -8,6 +8,7 @@ import { ProductCard } from "@/components/shop/product-card";
 import { ProductGrid } from "@/components/shop/product-grid";
 import { Badge } from "@/components/ui/badge";
 import { ProductActions } from "@/features/products/components/product-actions";
+import { ProductGallery } from "@/features/products/components/product-gallery";
 import {
   getRelatedStorefrontProducts,
   getStorefrontProductBySlug,
@@ -53,7 +54,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
   if (!product) notFound();
 
   const relatedProducts = await getRelatedStorefrontProducts(product);
-  const primaryImage = product.images[0]!;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -98,38 +98,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </Link>
 
         <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
-          <div className="space-y-4">
-            <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted shadow-soft">
-              <Image
-                src={primaryImage}
-                alt={product.name}
-                fill
-                priority
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                {...productImageProps(primaryImage)}
-              />
-            </div>
-            {product.images.length > 1 && (
-              <div className="grid grid-cols-4 gap-3">
-                {product.images.map((img, i) => (
-                  <div
-                    key={i}
-                    className="relative aspect-square overflow-hidden rounded-lg border border-border"
-                  >
-                    <Image
-                      src={img}
-                      alt={`${product.name} view ${i + 1}`}
-                      fill
-                      className="object-cover"
-                      sizes="100px"
-                      {...productImageProps(img)}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <ProductGallery images={product.images} name={product.name} />
 
           <div>
             <div className="flex flex-wrap gap-2">
