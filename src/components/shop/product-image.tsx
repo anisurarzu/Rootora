@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +23,12 @@ export function ProductImage({
 }: ProductImageProps) {
   const [imgSrc, setImgSrc] = useState(src || PRODUCT_PLACEHOLDER);
 
+  useEffect(() => {
+    setImgSrc(src || PRODUCT_PLACEHOLDER);
+  }, [src]);
+
+  const isRemote = imgSrc.startsWith("http");
+
   return (
     <Image
       src={imgSrc}
@@ -31,6 +37,7 @@ export function ProductImage({
       priority={priority}
       className={cn("object-cover", className)}
       sizes={sizes}
+      unoptimized={isRemote && !imgSrc.includes("res.cloudinary.com")}
       onError={() => {
         if (imgSrc !== PRODUCT_PLACEHOLDER) {
           setImgSrc(PRODUCT_PLACEHOLDER);

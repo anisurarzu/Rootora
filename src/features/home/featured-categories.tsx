@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { SectionHeading } from "@/components/common/section-heading";
-import { categories } from "@/lib/mock-data";
+import type { Category } from "@/types";
 import {
   fadeInUp,
   motion,
@@ -12,7 +12,9 @@ import {
   viewportOnce,
 } from "@/lib/animations";
 
-export function FeaturedCategories() {
+export function FeaturedCategories({ categories }: { categories: Category[] }) {
+  if (categories.length === 0) return null;
+
   return (
     <section className="section-padding bg-background" aria-labelledby="categories-heading">
       <div className="container-rootora">

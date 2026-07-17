@@ -18,7 +18,9 @@ import { slugify } from "@/lib/utils";
 function revalidateProductPaths(slug?: string) {
   revalidatePath("/admin/products");
   revalidatePath("/admin");
+  revalidatePath("/");
   revalidatePath("/shop");
+  revalidatePath("/collections");
   if (slug) {
     revalidatePath(`/shop/${slug}`);
     revalidatePath(`/admin/products/${slug}`);

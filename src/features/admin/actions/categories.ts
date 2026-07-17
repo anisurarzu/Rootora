@@ -18,7 +18,9 @@ const categorySchema = z.object({
 function revalidate() {
   revalidatePath("/admin/categories");
   revalidatePath("/admin");
+  revalidatePath("/");
   revalidatePath("/shop");
+  revalidatePath("/collections");
 }
 
 export async function createCategory(input: {

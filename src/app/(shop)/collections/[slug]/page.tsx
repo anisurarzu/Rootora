@@ -5,12 +5,9 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { SectionHeading } from "@/components/common/section-heading";
 import { ProductCard } from "@/components/shop/product-card";
 import { ProductGrid } from "@/components/shop/product-grid";
-import {
-  getFeaturedProducts,
-  getOrganicProducts,
-  getSeasonalProducts,
-  products,
-} from "@/lib/mock-data";
+import { getCollectionStorefrontProducts } from "@/features/products/storefront-queries";
+
+export const dynamic = "force-dynamic";
 
 interface CollectionPageProps {
   params: Promise<{ slug: string }>;
@@ -58,54 +55,6 @@ const collectionMeta: Record<
   },
 };
 
-const validSlugs = Object.keys(collectionMeta);
-
-function getCollectionProducts(slug: string): {
-  products: typeof products;
-  isFallback: boolean;
-} {
-  switch (slug) {
-    case "organic":
-      return { products: getOrganicProducts(), isFallback: false };
-    case "seasonal":
-      return { products: getSeasonalProducts(), isFallback: false };
-    case "gift-boxes":
-      return {
-        products: products.filter(
-          (p) =>
-            p.tags.includes("gift") ||
-            p.category.slug === "gift-boxes" ||
-            p.name.toLowerCase().includes("gift")
-        ),
-        isFallback: false,
-      };
-    case "clothing":
-      return {
-        products: products.filter(
-          (p) => p.category.slug === "traditional-clothing"
-        ),
-        isFallback: false,
-      };
-    case "festival":
-      return { products: getFeaturedProducts(), isFallback: false };
-    case "handmade":
-      return {
-        products: products.filter(
-          (p) =>
-            p.tags.includes("handmade") ||
-            p.category.slug === "traditional-clothing"
-        ),
-        isFallback: false,
-      };
-    default:
-      return { products, isFallback: true };
-  }
-}
-
-export async function generateStaticParams() {
-  return validSlugs.map((slug) => ({ slug }));
-}
-
 export async function generateMetadata({
   params,
 }: CollectionPageProps): Promise<Metadata> {
@@ -136,7 +85,7 @@ export default async function CollectionDetailPage({
   };
 
   const { products: collectionProducts, isFallback } =
-    getCollectionProducts(slug);
+    await getCollectionStorefrontProducts(slug);
 
   return (
     <MainLayout>

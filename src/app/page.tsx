@@ -12,11 +12,9 @@ import { RecipeSection } from "@/features/home/recipe-section";
 import { Testimonials } from "@/features/home/testimonials";
 import { TraditionalClothing } from "@/features/home/traditional-clothing";
 import {
-  getBestSellers,
-  getFreshToday,
-  getOrganicProducts,
-  getSeasonalProducts,
-} from "@/lib/mock-data";
+  getStorefrontCategories,
+  getStorefrontProductsByFlag,
+} from "@/features/products/storefront-queries";
 import { siteConfig } from "@/config/site";
 
 export const dynamic = "force-dynamic";
@@ -24,16 +22,18 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const [
     heroContent,
+    categories,
     seasonalProducts,
     freshToday,
     bestSellers,
     organicProducts,
   ] = await Promise.all([
     getHeroContent(),
-    Promise.resolve(getSeasonalProducts()),
-    Promise.resolve(getFreshToday()),
-    Promise.resolve(getBestSellers()),
-    Promise.resolve(getOrganicProducts().slice(0, 4)),
+    getStorefrontCategories({ onlyWithProducts: true }),
+    getStorefrontProductsByFlag("seasonal"),
+    getStorefrontProductsByFlag("freshToday"),
+    getStorefrontProductsByFlag("bestSeller"),
+    getStorefrontProductsByFlag("organic", 4),
   ]);
 
   const jsonLd = {
@@ -57,7 +57,7 @@ export default async function HomePage() {
       />
 
       <HeroSection content={heroContent} />
-      <FeaturedCategories />
+      <FeaturedCategories categories={categories} />
 
       {seasonalProducts.length > 0 && (
         <ProductShowcase
@@ -81,25 +81,29 @@ export default async function HomePage() {
         />
       )}
 
-      <ProductShowcase
-        id="best-sellers"
-        eyebrow="Popular"
-        title="Best Sellers"
-        description="Community favorites loved by thousands of customers."
-        products={bestSellers}
-        viewAllHref="/shop?sort=popular"
-      />
+      {bestSellers.length > 0 && (
+        <ProductShowcase
+          id="best-sellers"
+          eyebrow="Popular"
+          title="Best Sellers"
+          description="Community favorites loved by thousands of customers."
+          products={bestSellers}
+          viewAllHref="/shop?sort=popular"
+        />
+      )}
 
       <OrganicCollectionBanner />
 
-      <ProductShowcase
-        id="organic"
-        eyebrow="Organic"
-        title="Organic Collection"
-        description="Certified organic products from trusted Bangladeshi farms."
-        products={organicProducts}
-        viewAllHref="/collections/organic"
-      />
+      {organicProducts.length > 0 && (
+        <ProductShowcase
+          id="organic"
+          eyebrow="Organic"
+          title="Organic Collection"
+          description="Certified organic products from trusted Bangladeshi farms."
+          products={organicProducts}
+          viewAllHref="/collections/organic"
+        />
+      )}
 
       <TraditionalClothing />
       <FarmerStories />

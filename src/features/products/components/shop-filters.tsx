@@ -6,11 +6,15 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { categories } from "@/lib/mock-data";
+import type { Category } from "@/types";
 import { DISTRICTS } from "@/constants/navigation";
 import { cn } from "@/lib/utils";
 
-export function ShopFilters() {
+type ShopFiltersProps = {
+  categories: Category[];
+};
+
+export function ShopFilters({ categories }: ShopFiltersProps) {
   const searchParams = useSearchParams();
   const activeCategory = searchParams.get("category");
 

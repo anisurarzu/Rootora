@@ -8,23 +8,31 @@ import { ProductCard } from "@/components/shop/product-card";
 import { ProductGrid } from "@/components/shop/product-grid";
 import { Badge } from "@/components/ui/badge";
 import { ProductActions } from "@/features/products/components/product-actions";
-import { getProductBySlug, getRelatedProducts, products } from "@/lib/mock-data";
+import {
+  getRelatedStorefrontProducts,
+  getStorefrontProductBySlug,
+} from "@/features/products/storefront-queries";
 import { formatPrice } from "@/lib/utils";
 import { siteConfig } from "@/config/site";
+
+export const dynamic = "force-dynamic";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
 }
 
-export async function generateStaticParams() {
-  return products.map((product) => ({ slug: product.slug }));
+function productImageProps(url: string) {
+  const isRemote = url.startsWith("http");
+  return {
+    unoptimized: isRemote && !url.includes("res.cloudinary.com"),
+  };
 }
 
 export async function generateMetadata({
   params,
 }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getStorefrontProductBySlug(slug);
   if (!product) return { title: "Product Not Found" };
 
   return {
@@ -33,18 +41,19 @@ export async function generateMetadata({
     openGraph: {
       title: product.name,
       description: product.shortDescription,
-      images: [{ url: product.images[0] }],
+      images: product.images[0] ? [{ url: product.images[0] }] : undefined,
     },
   };
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getStorefrontProductBySlug(slug);
 
   if (!product) notFound();
 
-  const relatedProducts = getRelatedProducts(product);
+  const relatedProducts = await getRelatedStorefrontProducts(product);
+  const primaryImage = product.images[0]!;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -60,11 +69,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
         ? "https://schema.org/InStock"
         : "https://schema.org/OutOfStock",
     },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: product.rating,
-      reviewCount: product.reviewCount,
-    },
+    ...(product.reviewCount > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: product.rating,
+            reviewCount: product.reviewCount,
+          },
+        }
+      : {}),
     brand: { "@type": "Brand", name: siteConfig.name },
   };
 
@@ -88,12 +101,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <div className="space-y-4">
             <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted shadow-soft">
               <Image
-                src={product.images[0]}
+                src={primaryImage}
                 alt={product.name}
                 fill
                 priority
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 50vw"
+                {...productImageProps(primaryImage)}
               />
             </div>
             {product.images.length > 1 && (
@@ -109,6 +123,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                       fill
                       className="object-cover"
                       sizes="100px"
+                      {...productImageProps(img)}
                     />
                   </div>
                 ))}
@@ -127,24 +142,26 @@ export default async function ProductPage({ params }: ProductPageProps) {
               {product.name}
             </h1>
 
-            <div className="mt-3 flex items-center gap-3">
-              <div className="flex items-center gap-1">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`h-4 w-4 ${
-                      i < Math.floor(product.rating)
-                        ? "fill-warning text-warning"
-                        : "text-border"
-                    }`}
-                  />
-                ))}
+            {product.reviewCount > 0 && (
+              <div className="mt-3 flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`h-4 w-4 ${
+                        i < Math.floor(product.rating)
+                          ? "fill-warning text-warning"
+                          : "text-border"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span className="text-sm font-medium">{product.rating}</span>
+                <span className="text-sm text-muted-foreground">
+                  ({product.reviewCount} reviews)
+                </span>
               </div>
-              <span className="text-sm font-medium">{product.rating}</span>
-              <span className="text-sm text-muted-foreground">
-                ({product.reviewCount} reviews)
-              </span>
-            </div>
+            )}
 
             <div className="mt-6 flex items-baseline gap-3">
               <span className="font-button text-3xl font-bold text-primary">
@@ -194,6 +211,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   width={56}
                   height={56}
                   className="rounded-full object-cover"
+                  {...productImageProps(product.farmer.image)}
                 />
                 <div>
                   <p className="flex items-center gap-1 font-button text-sm font-semibold">

@@ -6,7 +6,12 @@ import { ProductCard } from "@/components/shop/product-card";
 import { ProductGrid } from "@/components/shop/product-grid";
 import { ShopFilters } from "@/features/products/components/shop-filters";
 import { ShopToolbar } from "@/features/products/components/shop-toolbar";
-import { products } from "@/lib/mock-data";
+import {
+  getStorefrontCategories,
+  getStorefrontProducts,
+} from "@/features/products/storefront-queries";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Shop",
@@ -25,35 +30,10 @@ interface ShopPageProps {
 
 export default async function ShopPage({ searchParams }: ShopPageProps) {
   const params = await searchParams;
-  let filteredProducts = [...products];
-
-  if (params.category) {
-    filteredProducts = filteredProducts.filter(
-      (p) => p.category.slug === params.category
-    );
-  }
-
-  if (params.q) {
-    const query = params.q.toLowerCase();
-    filteredProducts = filteredProducts.filter(
-      (p) =>
-        p.name.toLowerCase().includes(query) ||
-        p.description.toLowerCase().includes(query) ||
-        p.tags.some((t) => t.includes(query))
-    );
-  }
-
-  if (params.filter === "fresh-today") {
-    filteredProducts = filteredProducts.filter((p) => p.freshToday);
-  }
-
-  if (params.sort === "popular") {
-    filteredProducts.sort((a, b) => b.reviewCount - a.reviewCount);
-  } else if (params.sort === "price-asc") {
-    filteredProducts.sort((a, b) => a.price - b.price);
-  } else if (params.sort === "price-desc") {
-    filteredProducts.sort((a, b) => b.price - a.price);
-  }
+  const [categories, filteredProducts] = await Promise.all([
+    getStorefrontCategories(),
+    getStorefrontProducts(params),
+  ]);
 
   return (
     <MainLayout>
@@ -68,7 +48,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         <div className="flex flex-col gap-8 lg:flex-row">
           <aside className="hidden w-64 shrink-0 lg:block">
             <Suspense fallback={<div className="h-96 animate-pulse rounded-xl bg-muted" />}>
-              <ShopFilters />
+              <ShopFilters categories={categories} />
             </Suspense>
           </aside>
 
