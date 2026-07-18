@@ -62,22 +62,15 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
       )}
     >
       <Link href={`/shop/${product.slug}`} className="flex h-full flex-col">
-        <div
-          className={cn(
-            "relative shrink-0 overflow-hidden",
-            showFullProduct
-              ? "aspect-square bg-[#f6f4ef]"
-              : "aspect-[4/3] bg-muted/50"
-          )}
-        >
+        <div className="relative aspect-[4/3] shrink-0 overflow-hidden bg-muted/50">
           {showFullProduct ? (
-            <div className="absolute inset-2 sm:inset-3">
+            <div className="absolute inset-2 sm:inset-2.5">
               <ProductImage
                 src={product.images[0]}
                 alt={product.name}
                 priority={priority}
                 fit="contain"
-                className="transition-transform duration-700 ease-out group-hover:scale-[1.02]"
+                className="transition-transform duration-700 ease-out group-hover:scale-[1.03]"
               />
             </div>
           ) : (
