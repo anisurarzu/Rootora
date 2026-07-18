@@ -272,8 +272,10 @@ export function HeroManager({ settings, slides, canManage }: HeroManagerProps) {
           <div>
             <CardTitle>Product offer cards</CardTitle>
             <CardDescription>
-              Right-side rotating cards. Order controls which three appear in
-              the deck.
+              Storefront hero always rotates Best Seller products from the
+              catalog. Mark products as Best Seller in Products — these manual
+              slides below are kept for reference only and are not shown on the
+              live homepage.
             </CardDescription>
           </div>
           {canManage ? (

@@ -20,8 +20,8 @@ export default async function AdminHomepagePage() {
           Homepage CMS
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Customize the hero section — text, background, and rotating offer
-          cards. Changes appear live on the storefront.
+          Customize hero text and background. Rotating product cards always show
+          current Best Seller products from the catalog.
         </p>
       </header>
 

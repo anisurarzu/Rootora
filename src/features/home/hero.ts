@@ -1,11 +1,53 @@
 import {
   DEFAULT_HERO_CONTENT,
   type HeroContent,
+  type HeroSlideData,
 } from "@/features/home/hero-content";
+import { getStorefrontProductsByFlag } from "@/features/products/storefront-queries";
 import { prisma } from "@/lib/prisma";
+import { formatPrice } from "@/lib/utils";
+import type { Product } from "@/types";
 
 export type { HeroContent, HeroSlideData } from "@/features/home/hero-content";
 export { DEFAULT_HERO_CONTENT } from "@/features/home/hero-content";
+
+const HERO_BEST_SELLER_LIMIT = 8;
+
+function productToHeroSlide(product: Product, index: number): HeroSlideData {
+  const image = product.images[0] ?? "/images/products/placeholder.png";
+  const detailParts = [
+    formatPrice(product.price),
+    product.unit ? `· ${product.unit}` : null,
+  ].filter(Boolean);
+
+  return {
+    id: product.id,
+    image,
+    label: "Best seller",
+    title: product.name,
+    detail: detailParts.join(" "),
+    href: `/shop/${product.slug}`,
+    sortOrder: index,
+    active: true,
+  };
+}
+
+async function getBestSellerHeroSlides(): Promise<HeroSlideData[]> {
+  const bestSellers = await getStorefrontProductsByFlag(
+    "bestSeller",
+    HERO_BEST_SELLER_LIMIT
+  );
+  if (bestSellers.length > 0) {
+    return bestSellers.map(productToHeroSlide);
+  }
+
+  // Fallback if nothing is flagged yet — still show real catalog products
+  const featured = await getStorefrontProductsByFlag(
+    "featured",
+    HERO_BEST_SELLER_LIMIT
+  );
+  return featured.map(productToHeroSlide);
+}
 
 export async function ensureHeroDefaults() {
   const existing = await prisma.heroSettings.findUnique({
@@ -45,11 +87,10 @@ export async function ensureHeroDefaults() {
 
 export async function getHeroContent(): Promise<HeroContent> {
   try {
-    const hero = await ensureHeroDefaults();
-    const slides = await prisma.heroSlide.findMany({
-      where: { heroId: "default", active: true },
-      orderBy: { sortOrder: "asc" },
-    });
+    const [hero, bestSellerSlides] = await Promise.all([
+      ensureHeroDefaults(),
+      getBestSellerHeroSlides(),
+    ]);
 
     return {
       brandName: hero.brandName,
@@ -62,17 +103,8 @@ export async function getHeroContent(): Promise<HeroContent> {
       ctaSecondaryHref: hero.ctaSecondaryHref,
       backgroundImage: hero.backgroundImage,
       slides:
-        slides.length > 0
-          ? slides.map((slide) => ({
-              id: slide.id,
-              image: slide.image,
-              label: slide.label,
-              title: slide.title,
-              detail: slide.detail,
-              href: slide.href,
-              sortOrder: slide.sortOrder,
-              active: slide.active,
-            }))
+        bestSellerSlides.length > 0
+          ? bestSellerSlides
           : DEFAULT_HERO_CONTENT.slides,
     };
   } catch (error) {
