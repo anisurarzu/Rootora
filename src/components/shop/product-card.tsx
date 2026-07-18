@@ -50,6 +50,10 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
     );
   };
 
+  const showFullProduct =
+    product.category.slug === "honey" ||
+    product.tags.some((tag) => tag.toLowerCase().includes("honey"));
+
   return (
     <article
       className={cn(
@@ -58,13 +62,33 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
       )}
     >
       <Link href={`/shop/${product.slug}`} className="flex h-full flex-col">
-        <div className="relative aspect-[4/3] shrink-0 overflow-hidden bg-muted/50">
-          <ProductImage
-            src={product.images[0]}
-            alt={product.name}
-            priority={priority}
-            className="transition-transform duration-700 ease-out group-hover:scale-[1.04]"
-          />
+        <div
+          className={cn(
+            "relative shrink-0 overflow-hidden",
+            showFullProduct
+              ? "aspect-square bg-[#f6f4ef]"
+              : "aspect-[4/3] bg-muted/50"
+          )}
+        >
+          {showFullProduct ? (
+            <div className="absolute inset-2 sm:inset-3">
+              <ProductImage
+                src={product.images[0]}
+                alt={product.name}
+                priority={priority}
+                fit="contain"
+                className="transition-transform duration-700 ease-out group-hover:scale-[1.02]"
+              />
+            </div>
+          ) : (
+            <ProductImage
+              src={product.images[0]}
+              alt={product.name}
+              priority={priority}
+              fit="cover"
+              className="transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+            />
+          )}
 
           {badges.length > 0 && (
             <div className="absolute left-1.5 top-1.5 flex max-w-[calc(100%-2.5rem)] flex-wrap gap-0.5">

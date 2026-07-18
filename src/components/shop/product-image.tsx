@@ -12,6 +12,8 @@ interface ProductImageProps {
   priority?: boolean;
   className?: string;
   sizes?: string;
+  /** cover crops to fill; contain shows the full product (jars, bottles). */
+  fit?: "cover" | "contain";
 }
 
 export function ProductImage({
@@ -20,6 +22,7 @@ export function ProductImage({
   priority,
   className,
   sizes = "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw",
+  fit = "cover",
 }: ProductImageProps) {
   const [imgSrc, setImgSrc] = useState(src || PRODUCT_PLACEHOLDER);
 
@@ -35,7 +38,10 @@ export function ProductImage({
       alt={alt}
       fill
       priority={priority}
-      className={cn("object-cover", className)}
+      className={cn(
+        fit === "contain" ? "object-contain object-center" : "object-cover",
+        className
+      )}
       sizes={sizes}
       unoptimized={isRemote && !imgSrc.includes("res.cloudinary.com")}
       onError={() => {
