@@ -194,7 +194,10 @@ export function formValuesToPrismaData(values: ProductFormValues) {
     tags: values.tags.filter(Boolean),
     price: values.price,
     salePrice: values.salePrice,
-    originalPrice: values.originalPrice ?? values.salePrice,
+    originalPrice:
+      values.salePrice != null && values.salePrice < values.price
+        ? values.price
+        : values.originalPrice ?? null,
     costPrice: values.costPrice,
     wholesalePrice: values.wholesalePrice,
     tax: values.tax,

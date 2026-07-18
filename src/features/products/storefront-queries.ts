@@ -75,9 +75,12 @@ export function mapDbFarmerToStorefront(
 
 export function mapDbProductToStorefront(product: DbProduct): Product {
   const reviewCount = product._count.reviews;
-  const price = Number(product.salePrice ?? product.price);
-  const originalPrice =
-    product.originalPrice != null ? Number(product.originalPrice) : undefined;
+  const regularPrice = Number(product.price);
+  const salePrice =
+    product.salePrice != null ? Number(product.salePrice) : null;
+  const onSale = salePrice != null && salePrice < regularPrice;
+  const price = onSale ? salePrice : regularPrice;
+  const originalPrice = onSale ? regularPrice : undefined;
 
   return {
     id: product.id,
@@ -86,8 +89,7 @@ export function mapDbProductToStorefront(product: DbProduct): Product {
     description: product.description,
     shortDescription: product.shortDescription ?? "",
     price,
-    originalPrice:
-      originalPrice != null && originalPrice > price ? originalPrice : undefined,
+    originalPrice,
     images: productImages(product),
     category: {
       id: product.category.id,
