@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth-server";
 import type { InvoiceOrder } from "@/features/checkout/invoice-types";
+import { activeOrderWhere } from "@/features/orders/order-status-code";
 
 export type { InvoiceOrder } from "@/features/checkout/invoice-types";
 export {
@@ -103,6 +104,7 @@ export async function getOrderForInvoiceAccess(options: {
 
   const order = await prisma.order.findFirst({
     where: {
+      ...activeOrderWhere,
       OR: [
         orderId ? { id: orderId } : undefined,
         orderNumber ? { orderNumber } : undefined,

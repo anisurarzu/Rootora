@@ -8,11 +8,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { CustomerActions } from "@/features/admin/components/customer-actions";
+import { activeOrderWhere } from "@/features/orders/order-status-code";
 import {
   getPermissionsForRole,
   requirePermission,
 } from "@/lib/auth-server";
 import { formatPrice } from "@/lib/utils";
+import { formatBdDate } from "@/lib/datetime";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +39,7 @@ export default async function AdminCustomerDetailPage({
       where: { id },
       include: {
         orders: {
+          where: activeOrderWhere,
           take: 10,
           orderBy: { createdAt: "desc" },
           select: {
@@ -49,7 +52,12 @@ export default async function AdminCustomerDetailPage({
           },
         },
         addresses: true,
-        _count: { select: { orders: true, reviews: true } },
+        _count: {
+          select: {
+            orders: { where: activeOrderWhere },
+            reviews: true,
+          },
+        },
       },
     }),
     prisma.role.findMany({
@@ -116,7 +124,7 @@ export default async function AdminCustomerDetailPage({
             </p>
             <p>
               <span className="text-muted-foreground">Joined:</span>{" "}
-              {customer.createdAt.toLocaleDateString("en-BD")}
+              {formatBdDate(customer.createdAt)}
             </p>
             {customer.banReason ? (
               <p>

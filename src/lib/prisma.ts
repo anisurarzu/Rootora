@@ -6,7 +6,7 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 /** Bump when Prisma schema shape changes so hot reload drops stale clients. */
-const PRISMA_SCHEMA_VERSION = 6;
+const PRISMA_SCHEMA_VERSION = 12;
 
 function createPrismaClient() {
   return new PrismaClient({
@@ -17,23 +17,42 @@ function createPrismaClient() {
   });
 }
 
-function assertHeroModels(client: PrismaClient) {
-  if (
-    typeof client.heroSettings?.findUnique !== "function" ||
-    typeof client.heroSlide?.findMany !== "function"
-  ) {
-    throw new Error(
-      "Prisma client is missing HeroSettings/HeroSlide. Stop the Next.js server, run `npx prisma generate`, then start `npm run dev` again."
-    );
+function hasModel(
+  client: PrismaClient,
+  name: keyof PrismaClient & string
+): boolean {
+  const delegate = (client as unknown as Record<string, unknown>)[name];
+  return Boolean(
+    delegate &&
+      typeof delegate === "object" &&
+      typeof (delegate as { findMany?: unknown }).findMany === "function"
+  );
+}
+
+/** Runtime field check — catches stale engines that still pass version bumps. */
+function orderHasStatusCode(client: PrismaClient): boolean {
+  try {
+    const fields = (
+      client as unknown as {
+        _runtimeDataModel?: {
+          models?: { Order?: { fields?: Array<{ name?: string }> } };
+        };
+      }
+    )._runtimeDataModel?.models?.Order?.fields;
+    return Boolean(fields?.some((field) => field.name === "statusCode"));
+  } catch {
+    return false;
   }
 }
 
 function isCurrentClient(client: PrismaClient) {
   return (
-    typeof client.role?.count === "function" &&
-    typeof client.permission?.count === "function" &&
-    typeof client.heroSettings?.findUnique === "function" &&
-    typeof client.heroSlide?.findMany === "function" &&
+    hasModel(client, "role") &&
+    hasModel(client, "permission") &&
+    hasModel(client, "heroSettings") &&
+    hasModel(client, "heroSlide") &&
+    hasModel(client, "orderStatusEvent") &&
+    orderHasStatusCode(client) &&
     globalForPrisma.prismaSchemaVersion === PRISMA_SCHEMA_VERSION
   );
 }
@@ -51,13 +70,24 @@ function getPrismaClient() {
   }
 
   const client = createPrismaClient();
-  assertHeroModels(client);
 
+  // Always cache in dev so the next request can replace a stale Turbopack client.
   if (process.env.NODE_ENV !== "production") {
     globalForPrisma.prisma = client;
     globalForPrisma.prismaSchemaVersion = PRISMA_SCHEMA_VERSION;
   }
+
   return client;
 }
 
-export const prisma = getPrismaClient();
+/**
+ * Lazy proxy — avoids crashing the whole app at import time when Turbopack
+ * briefly serves a stale generated Prisma client after a schema change.
+ */
+export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
+  get(_target, prop, _receiver) {
+    const client = getPrismaClient();
+    const value = Reflect.get(client, prop, client);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});

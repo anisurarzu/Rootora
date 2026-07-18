@@ -44,6 +44,18 @@ export interface Product {
   bestSeller?: boolean;
   freshToday?: boolean;
   seasonal?: boolean;
+  variants?: ProductVariantOption[];
+}
+
+export interface ProductVariantOption {
+  id: string;
+  name: string;
+  value: string;
+  image?: string | null;
+  price?: number | null;
+  salePrice?: number | null;
+  stockCount: number;
+  sku?: string | null;
 }
 
 export interface Review {
@@ -101,6 +113,7 @@ export interface CartItem {
   product: Product;
   quantity: number;
   variantId?: string;
+  variantLabel?: string;
 }
 
 export interface Address {

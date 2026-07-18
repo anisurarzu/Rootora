@@ -2,6 +2,7 @@
 
 import { Download, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { siteConfig } from "@/config/site";
 import {
   COMPANY,
   formatInvoiceDate,
@@ -20,11 +21,13 @@ export function InvoiceDocument({
 }: InvoiceDocumentProps) {
   const billToName = order.address.name;
   const billToEmail = order.guestEmail || order.user?.email || null;
+  const paymentLabel = order.paymentMethod ?? "Cash on Delivery";
+  const issuedOn = formatInvoiceDate(order.createdAt);
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-[800px] font-body">
       {showActions ? (
-        <div className="mb-6 flex flex-wrap items-center justify-end gap-2 print:hidden">
+        <div className="mb-5 flex flex-wrap items-center justify-end gap-2 print:hidden">
           <Button type="button" variant="outline" onClick={() => window.print()}>
             <Printer className="h-4 w-4" />
             Print
@@ -38,173 +41,223 @@ export function InvoiceDocument({
 
       <article
         id="invoice-document"
-        className="rounded-xl border border-border bg-white p-8 text-slate-900 shadow-soft print:rounded-none print:border-0 print:shadow-none sm:p-10"
+        className="border border-neutral-200 bg-white text-neutral-900 shadow-sm print:border-0 print:shadow-none"
       >
-        <header className="flex flex-col gap-6 border-b border-slate-200 pb-6 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="font-heading text-3xl font-semibold tracking-tight text-[#355E3B]">
-              {COMPANY.name}
-            </p>
-            <p className="mt-1 text-sm text-slate-500">{COMPANY.tagline}</p>
-            <div className="mt-4 space-y-0.5 text-sm text-slate-600">
-              <p>{COMPANY.address}</p>
-              <p>{COMPANY.email}</p>
-              <p>{COMPANY.phone}</p>
-              <p>{COMPANY.website}</p>
+        <div className="h-1.5 w-full bg-[#355E3B]" />
+
+        <div className="px-7 py-8 sm:px-10 sm:py-10">
+          <header className="flex flex-col gap-8 border-b border-neutral-200 pb-7 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="font-heading text-3xl font-bold tracking-tight text-[#355E3B]">
+                {siteConfig.name}
+              </p>
+              <p className="mt-1 font-heading text-base italic text-[#739072]">
+                {siteConfig.tagline}
+              </p>
+              <div className="mt-4 space-y-0.5 text-[12px] leading-5 text-neutral-600">
+                <p>{COMPANY.address}</p>
+                <p>{COMPANY.email}</p>
+                <p>{COMPANY.phone}</p>
+                <p>{COMPANY.website}</p>
+              </div>
             </div>
+
+            <div className="sm:min-w-[240px] sm:text-right">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
+                Tax Invoice
+              </p>
+              <p className="mt-1 text-[28px] font-semibold leading-none text-neutral-900">
+                INVOICE
+              </p>
+              <dl className="mt-5 space-y-1.5 sm:ml-auto sm:max-w-[260px]">
+                <div className="grid grid-cols-[auto_1fr] gap-x-3 text-[13px] sm:text-right">
+                  <dt className="text-neutral-500 sm:text-left">Invoice No.</dt>
+                  <dd className="font-semibold tabular-nums tracking-normal text-neutral-900">
+                    {order.orderNumber}
+                  </dd>
+                </div>
+                <div className="grid grid-cols-[auto_1fr] gap-x-3 text-[13px] sm:text-right">
+                  <dt className="text-neutral-500 sm:text-left">Date</dt>
+                  <dd className="font-medium text-neutral-900">{issuedOn}</dd>
+                </div>
+                <div className="grid grid-cols-[auto_1fr] gap-x-3 text-[13px] sm:text-right">
+                  <dt className="text-neutral-500 sm:text-left">Payment</dt>
+                  <dd className="font-medium text-neutral-900">{paymentLabel}</dd>
+                </div>
+                <div className="grid grid-cols-[auto_1fr] gap-x-3 text-[13px] sm:text-right">
+                  <dt className="text-neutral-500 sm:text-left">Status</dt>
+                  <dd className="font-medium text-neutral-900">
+                    {order.paymentStatus} / {order.status}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </header>
+
+          {/* Parties */}
+          <section className="mt-7 grid gap-6 border-b border-neutral-200 pb-7 sm:grid-cols-2">
+            <div>
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
+                Bill to
+              </h2>
+              <div className="mt-2.5 space-y-0.5 text-[13px] leading-6 text-neutral-700">
+                <p className="font-semibold text-neutral-900">{billToName}</p>
+                {billToEmail ? <p>{billToEmail}</p> : null}
+                <p>{order.address.phone}</p>
+                {!order.userId ? (
+                  <p className="text-[12px] text-neutral-500">Guest checkout</p>
+                ) : null}
+              </div>
+            </div>
+            <div>
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">
+                Ship to
+              </h2>
+              <div className="mt-2.5 space-y-0.5 text-[13px] leading-6 text-neutral-700">
+                <p className="font-semibold text-neutral-900">
+                  {order.address.name}
+                </p>
+                <p>{order.address.phone}</p>
+                <p>
+                  {order.address.addressLine1}
+                  {order.address.addressLine2
+                    ? `, ${order.address.addressLine2}`
+                    : ""}
+                </p>
+                <p>
+                  {order.address.district} {order.address.postalCode}
+                </p>
+                <p>Bangladesh</p>
+              </div>
+            </div>
+          </section>
+
+          {/* Line items */}
+          <div className="mt-7 overflow-x-auto">
+            <table className="w-full min-w-[560px] border-collapse text-[13px]">
+              <thead>
+                <tr className="border-b-2 border-neutral-900 text-left">
+                  <th className="w-10 py-3 pr-2 font-semibold text-neutral-900">
+                    #
+                  </th>
+                  <th className="py-3 pr-3 font-semibold text-neutral-900">
+                    Description
+                  </th>
+                  <th className="w-20 py-3 pr-3 text-right font-semibold text-neutral-900">
+                    Qty
+                  </th>
+                  <th className="w-28 py-3 pr-3 text-right font-semibold text-neutral-900">
+                    Unit price
+                  </th>
+                  <th className="w-28 py-3 text-right font-semibold text-neutral-900">
+                    Amount
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {order.items.map((item, index) => {
+                  const lineTotal = Number(item.price) * item.quantity;
+                  return (
+                    <tr
+                      key={item.id}
+                      className="border-b border-neutral-200 align-top"
+                    >
+                      <td className="py-3.5 pr-2 tabular-nums text-neutral-500">
+                        {index + 1}
+                      </td>
+                      <td className="py-3.5 pr-3">
+                        <p className="font-medium text-neutral-900">
+                          {item.product.name}
+                        </p>
+                        {item.product.sku ? (
+                          <p className="mt-0.5 text-[12px] text-neutral-500">
+                            SKU: {item.product.sku}
+                          </p>
+                        ) : null}
+                      </td>
+                      <td className="py-3.5 pr-3 text-right tabular-nums text-neutral-700">
+                        {item.quantity}
+                        {item.product.unit ? ` ${item.product.unit}` : ""}
+                      </td>
+                      <td className="py-3.5 pr-3 text-right tabular-nums text-neutral-700">
+                        {formatInvoiceMoney(Number(item.price))}
+                      </td>
+                      <td className="py-3.5 text-right font-medium tabular-nums text-neutral-900">
+                        {formatInvoiceMoney(lineTotal)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-          <div className="text-left sm:text-right">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-              Tax Invoice / Receipt
-            </p>
-            <p className="mt-2 font-heading text-2xl font-semibold text-slate-900">
-              {order.orderNumber}
-            </p>
-            <dl className="mt-4 space-y-1 text-sm text-slate-600">
-              <div className="flex gap-2 sm:justify-end">
-                <dt className="text-slate-500">Invoice date</dt>
-                <dd>{formatInvoiceDate(order.createdAt)}</dd>
+
+          {/* Totals */}
+          <section className="mt-6 flex flex-col gap-6 sm:flex-row sm:justify-between">
+            <div className="max-w-sm text-[12px] leading-5 text-neutral-500">
+              <p className="font-semibold uppercase tracking-[0.1em] text-neutral-600">
+                Payment terms
+              </p>
+              <p className="mt-1.5">
+                Cash on Delivery. Please pay the total amount to the delivery
+                agent upon receipt of goods. This document is computer-generated
+                and does not require a signature.
+              </p>
+            </div>
+
+            <dl className="w-full max-w-[280px] space-y-2 text-[13px]">
+              <div className="flex justify-between gap-8">
+                <dt className="text-neutral-500">Subtotal</dt>
+                <dd className="tabular-nums text-neutral-900">
+                  {formatInvoiceMoney(Number(order.subtotal))}
+                </dd>
               </div>
-              <div className="flex gap-2 sm:justify-end">
-                <dt className="text-slate-500">Payment</dt>
-                <dd>{order.paymentMethod ?? "COD"}</dd>
+              <div className="flex justify-between gap-8">
+                <dt className="text-neutral-500">Shipping</dt>
+                <dd className="tabular-nums text-neutral-900">
+                  {Number(order.shipping) === 0
+                    ? "Free"
+                    : formatInvoiceMoney(Number(order.shipping))}
+                </dd>
               </div>
-              <div className="flex gap-2 sm:justify-end">
-                <dt className="text-slate-500">Status</dt>
-                <dd>
-                  {order.paymentStatus} / {order.status}
+              {Number(order.discount) > 0 ? (
+                <div className="flex justify-between gap-8">
+                  <dt className="text-neutral-500">Discount</dt>
+                  <dd className="tabular-nums text-neutral-900">
+                    −{formatInvoiceMoney(Number(order.discount))}
+                  </dd>
+                </div>
+              ) : null}
+              <div className="mt-1 flex justify-between gap-8 border-t-2 border-neutral-900 pt-3 text-[15px] font-semibold">
+                <dt className="text-neutral-900">Total due</dt>
+                <dd className="tabular-nums text-neutral-900">
+                  {formatInvoiceMoney(Number(order.total))}
                 </dd>
               </div>
             </dl>
-          </div>
-        </header>
-
-        <section className="mt-8 grid gap-6 sm:grid-cols-2">
-          <div>
-            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Bill to
-            </h2>
-            <div className="mt-2 space-y-0.5 text-sm text-slate-700">
-              <p className="font-medium text-slate-900">{billToName}</p>
-              {billToEmail ? <p>{billToEmail}</p> : null}
-              <p>{order.address.phone}</p>
-              {!order.userId ? (
-                <p className="text-xs text-slate-500">Guest checkout</p>
-              ) : null}
-            </div>
-          </div>
-          <div>
-            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Ship to
-            </h2>
-            <div className="mt-2 space-y-0.5 text-sm text-slate-700">
-              <p className="font-medium text-slate-900">{order.address.name}</p>
-              <p>{order.address.phone}</p>
-              <p>
-                {order.address.addressLine1}
-                {order.address.addressLine2
-                  ? `, ${order.address.addressLine2}`
-                  : ""}
-              </p>
-              <p>
-                {order.address.district}, {order.address.postalCode}
-              </p>
-              <p>Bangladesh</p>
-            </div>
-          </div>
-        </section>
-
-        <div className="mt-8 overflow-x-auto">
-          <table className="w-full min-w-[540px] border-collapse text-sm">
-            <thead>
-              <tr className="border-y border-slate-200 bg-slate-50 text-left">
-                <th className="px-3 py-3 font-medium text-slate-600">#</th>
-                <th className="px-3 py-3 font-medium text-slate-600">Item</th>
-                <th className="px-3 py-3 font-medium text-slate-600">Qty</th>
-                <th className="px-3 py-3 font-medium text-slate-600">Unit price</th>
-                <th className="px-3 py-3 text-right font-medium text-slate-600">
-                  Amount
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {order.items.map((item, index) => {
-                const lineTotal = Number(item.price) * item.quantity;
-                return (
-                  <tr key={item.id} className="border-b border-slate-100">
-                    <td className="px-3 py-3 text-slate-500">{index + 1}</td>
-                    <td className="px-3 py-3">
-                      <p className="font-medium text-slate-900">
-                        {item.product.name}
-                      </p>
-                      {item.product.sku ? (
-                        <p className="text-xs text-slate-500">
-                          SKU: {item.product.sku}
-                        </p>
-                      ) : null}
-                    </td>
-                    <td className="px-3 py-3 text-slate-700">
-                      {item.quantity}
-                      {item.product.unit ? ` ${item.product.unit}` : ""}
-                    </td>
-                    <td className="px-3 py-3 text-slate-700">
-                      {formatInvoiceMoney(Number(item.price))}
-                    </td>
-                    <td className="px-3 py-3 text-right font-medium text-slate-900">
-                      {formatInvoiceMoney(lineTotal)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        <section className="mt-8 flex justify-end">
-          <dl className="w-full max-w-xs space-y-2 text-sm">
-            <div className="flex justify-between gap-6">
-              <dt className="text-slate-500">Subtotal</dt>
-              <dd>{formatInvoiceMoney(Number(order.subtotal))}</dd>
-            </div>
-            <div className="flex justify-between gap-6">
-              <dt className="text-slate-500">Shipping</dt>
-              <dd>
-                {Number(order.shipping) === 0
-                  ? "Free"
-                  : formatInvoiceMoney(Number(order.shipping))}
-              </dd>
-            </div>
-            {Number(order.discount) > 0 ? (
-              <div className="flex justify-between gap-6">
-                <dt className="text-slate-500">Discount</dt>
-                <dd>-{formatInvoiceMoney(Number(order.discount))}</dd>
-              </div>
-            ) : null}
-            <div className="flex justify-between gap-6 border-t border-slate-200 pt-3 font-heading text-lg font-semibold text-slate-900">
-              <dt>Total due (COD)</dt>
-              <dd>{formatInvoiceMoney(Number(order.total))}</dd>
-            </div>
-          </dl>
-        </section>
-
-        {order.notes ? (
-          <section className="mt-8 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            <p className="font-medium text-slate-800">Order notes</p>
-            <p className="mt-1">{order.notes}</p>
           </section>
-        ) : null}
 
-        <footer className="mt-10 border-t border-slate-200 pt-6 text-xs leading-relaxed text-slate-500">
-          <p>
-            This is a computer-generated invoice for your ROOTORA Cash on
-            Delivery order. Please pay the total amount to the delivery agent
-            upon receipt of goods.
-          </p>
-          <p className="mt-2">
-            Thank you for shopping with {COMPANY.name}. For support, contact{" "}
-            {COMPANY.email}.
-          </p>
-        </footer>
+          {order.notes ? (
+            <section className="mt-7 border border-neutral-200 bg-neutral-50 px-4 py-3 text-[13px] text-neutral-700">
+              <p className="font-semibold text-neutral-900">Notes</p>
+              <p className="mt-1 leading-6">{order.notes}</p>
+            </section>
+          ) : null}
+
+          <footer className="mt-10 border-t border-neutral-200 pt-5 text-[12px] leading-5 text-neutral-500">
+            <p>
+              Thank you for shopping with {COMPANY.name}. For support, contact{" "}
+              {COMPANY.email}.
+            </p>
+            <p className="mt-1">
+              Invoice No.{" "}
+              <span className="font-medium tabular-nums text-neutral-700">
+                {order.orderNumber}
+              </span>{" "}
+              · Issued {issuedOn}
+            </p>
+          </footer>
+        </div>
       </article>
 
       <style>{`
@@ -222,12 +275,12 @@ export function InvoiceDocument({
             top: 0;
             width: 100%;
             margin: 0;
-            padding: 24px;
             box-shadow: none !important;
             border: none !important;
           }
           @page {
             margin: 12mm;
+            size: A4;
           }
         }
       `}</style>

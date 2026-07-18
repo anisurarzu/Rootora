@@ -6,13 +6,10 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/shop",
     children: [
       { label: "All Products", href: "/shop" },
-      { label: "Organic Foods", href: "/shop?category=organic-foods" },
-      { label: "Fresh Fruits", href: "/shop?category=fresh-fruits" },
-      { label: "Vegetables", href: "/shop?category=vegetables" },
-      { label: "Rice & Grains", href: "/shop?category=rice-grains" },
-      { label: "Honey & Tea", href: "/shop?category=honey-tea" },
-      { label: "Spices", href: "/shop?category=spices" },
-      { label: "Dairy", href: "/shop?category=dairy" },
+      { label: "Traditional Clothing", href: "/shop?category=traditional-clothing" },
+      { label: "T-shirt", href: "/shop?category=t-shirt" },
+      { label: "Honey", href: "/shop?category=honey" },
+      { label: "Organic Foods", href: "/shop?filter=organic" },
     ],
   },
   {
@@ -28,6 +25,7 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   { label: "Farmers", href: "/farmers" },
+  { label: "Track Order", href: "/track-order" },
   { label: "Recipes", href: "/recipes" },
   { label: "Blog", href: "/blog" },
 ];
@@ -35,8 +33,8 @@ export const NAV_ITEMS: NavItem[] = [
 export const FOOTER_LINKS = {
   shop: [
     { label: "All Products", href: "/shop" },
-    { label: "Organic Foods", href: "/shop?category=organic-foods" },
-    { label: "Fresh Produce", href: "/shop?category=fresh-fruits" },
+    { label: "Organic Foods", href: "/shop?filter=organic" },
+    { label: "Fresh Produce", href: "/shop?category=seasonal-fruits" },
     { label: "Gift Boxes", href: "/collections/gift-boxes" },
     { label: "New Arrivals", href: "/shop?sort=newest" },
   ],
@@ -62,13 +60,11 @@ export const FOOTER_LINKS = {
 };
 
 export const POPULAR_SEARCHES = [
-  "Organic honey",
-  "Basmati rice",
-  "Fresh mangoes",
-  "Green tea",
-  "Mustard oil",
-  "Handloom saree",
-  "Spice box",
+  "Mustard honey",
+  "Punjabi",
+  "T-shirt",
+  "Mango",
+  "Organic",
   "Gift hamper",
 ];
 

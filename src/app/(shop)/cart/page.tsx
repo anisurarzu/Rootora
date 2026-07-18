@@ -51,9 +51,9 @@ export default function CartPage() {
 
         <div className="grid gap-12 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-4">
-            {items.map(({ product, quantity }) => (
+            {items.map(({ product, quantity, variantId, variantLabel }) => (
               <article
-                key={product.id}
+                key={`${product.id}-${variantId ?? "base"}`}
                 className="flex gap-4 rounded-xl border border-border bg-surface p-4 shadow-soft sm:gap-6 sm:p-6"
               >
                 <Link
@@ -79,7 +79,7 @@ export default function CartPage() {
                         {product.name}
                       </Link>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {product.unit}
+                        {variantLabel ?? product.unit}
                       </p>
                     </div>
                     <p className="font-button font-semibold text-primary">
@@ -91,7 +91,9 @@ export default function CartPage() {
                     <div className="inline-flex items-center rounded-lg border border-border">
                       <button
                         type="button"
-                        onClick={() => updateQuantity(product.id, quantity - 1)}
+                        onClick={() =>
+                          updateQuantity(product.id, quantity - 1, variantId)
+                        }
                         className="flex h-9 w-9 items-center justify-center hover:bg-muted"
                         aria-label="Decrease quantity"
                       >
@@ -102,7 +104,9 @@ export default function CartPage() {
                       </span>
                       <button
                         type="button"
-                        onClick={() => updateQuantity(product.id, quantity + 1)}
+                        onClick={() =>
+                          updateQuantity(product.id, quantity + 1, variantId)
+                        }
                         className="flex h-9 w-9 items-center justify-center hover:bg-muted"
                         aria-label="Increase quantity"
                       >
@@ -112,7 +116,7 @@ export default function CartPage() {
 
                     <button
                       type="button"
-                      onClick={() => removeItem(product.id)}
+                      onClick={() => removeItem(product.id, variantId)}
                       className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-destructive"
                       aria-label={`Remove ${product.name}`}
                     >
@@ -143,7 +147,8 @@ export default function CartPage() {
               </div>
               {subtotal < FREE_SHIPPING_THRESHOLD && (
                 <p className="text-xs text-secondary">
-                  Add {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)} more for free delivery
+                  Add {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)} more for
+                  free delivery
                 </p>
               )}
             </div>

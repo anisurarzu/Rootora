@@ -1,5 +1,6 @@
 import { requireApiSession } from "@/lib/api/auth";
 import { apiOk, apiOptions, handleApiError } from "@/lib/api/response";
+import { activeOrderWhere } from "@/features/orders/order-status-code";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ export async function GET(request: Request) {
     const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") || 20)));
     const skip = (page - 1) * limit;
 
-    const where = { userId: user.id };
+    const where = { userId: user.id, ...activeOrderWhere };
 
     const [orders, total] = await Promise.all([
       prisma.order.findMany({

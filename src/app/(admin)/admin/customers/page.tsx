@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { activeOrderWhere } from "@/features/orders/order-status-code";
 import { requirePermission } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 
@@ -24,7 +25,7 @@ export default async function AdminCustomersPage() {
       role: true,
       banned: true,
       createdAt: true,
-      _count: { select: { orders: true } },
+      _count: { select: { orders: { where: activeOrderWhere } } },
     },
   });
 

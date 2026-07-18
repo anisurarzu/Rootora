@@ -235,10 +235,6 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
               </Link>
             ))}
           </div>
-
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            Voice search coming soon
-          </p>
         </div>
       </div>
     </div>

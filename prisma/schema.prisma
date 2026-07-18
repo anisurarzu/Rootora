@@ -360,14 +360,30 @@ model Order {
   addressId     String
   address       Address        @relation(fields: [addressId], references: [id])
   notes         String?
+  /// Soft-delete marker: 0 = visible, 255 = removed from UI (row kept in DB)
+  statusCode    Int            @default(0)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   items         OrderItem[]
+  statusEvents  OrderStatusEvent[]
 
   @@index([userId])
   @@index([orderNumber])
   @@index([accessToken])
+  @@index([statusCode])
   @@map("orders")
+}
+
+model OrderStatusEvent {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    OrderStatus
+  note      String?
+  createdAt DateTime    @default(now())
+
+  @@index([orderId, createdAt])
+  @@map("order_status_events")
 }
 
 model OrderItem {

@@ -6,6 +6,7 @@ import { ArrowLeft, BadgeCheck, MapPin, Star, Truck } from "lucide-react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { ProductCard } from "@/components/shop/product-card";
 import { ProductGrid } from "@/components/shop/product-grid";
+import { ProductTitle } from "@/components/shop/product-title";
 import { Badge } from "@/components/ui/badge";
 import { ProductActions } from "@/features/products/components/product-actions";
 import { ProductGallery } from "@/features/products/components/product-gallery";
@@ -108,7 +109,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
 
             <h1 className="mt-4 font-heading text-3xl font-semibold text-heading md:text-4xl">
-              {product.name}
+              <ProductTitle name={product.name} size="page" />
             </h1>
 
             {product.reviewCount > 0 && (

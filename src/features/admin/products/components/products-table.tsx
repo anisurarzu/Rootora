@@ -54,6 +54,7 @@ import {
   type AdminProductListItem,
 } from "@/features/admin/actions/products";
 import { formatPrice } from "@/lib/utils";
+import { formatBdDate } from "@/lib/datetime";
 
 type ProductsTableProps = {
   products: AdminProductListItem[];
@@ -244,13 +245,13 @@ export function ProductsTable({ products, categories }: ProductsTableProps) {
         accessorKey: "createdAt",
         header: "Created",
         cell: ({ row }) =>
-          new Date(row.original.createdAt).toLocaleDateString(),
+          formatBdDate(row.original.createdAt),
       },
       {
         accessorKey: "updatedAt",
         header: "Updated",
         cell: ({ row }) =>
-          new Date(row.original.updatedAt).toLocaleDateString(),
+          formatBdDate(row.original.updatedAt),
       },
       {
         id: "actions",

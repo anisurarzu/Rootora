@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, BookOpen, Calendar, User } from "lucide-react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Badge } from "@/components/ui/badge";
+import { formatBdDate } from "@/lib/datetime";
 import { blogPosts, getBlogBySlug } from "@/lib/mock-data";
 
 interface BlogPageProps {
@@ -42,11 +43,11 @@ const articleContent: Record<
 };
 
 function formatDate(dateStr: string): string {
-  return new Intl.DateTimeFormat("en-BD", {
+  return formatBdDate(dateStr, {
     year: "numeric",
     month: "long",
     day: "numeric",
-  }).format(new Date(dateStr));
+  });
 }
 
 export async function generateStaticParams() {

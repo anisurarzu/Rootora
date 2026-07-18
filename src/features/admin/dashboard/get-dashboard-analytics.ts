@@ -1,18 +1,15 @@
 import type { OrderStatus, PaymentStatus, ProductStatus } from "@prisma/client";
+import { activeOrderWhere } from "@/features/orders/order-status-code";
+import {
+  addBdDays,
+  formatBdDate,
+  startOfBdDay,
+  toBdDayKey,
+} from "@/lib/datetime";
 import { prisma } from "@/lib/prisma";
 
-function startOfDay(date: Date) {
-  const next = new Date(date);
-  next.setHours(0, 0, 0, 0);
-  return next;
-}
-
 function formatDayLabel(date: Date) {
-  return date.toLocaleDateString("en-BD", { month: "short", day: "numeric" });
-}
-
-function toDayKey(date: Date) {
-  return startOfDay(date).toISOString().slice(0, 10);
+  return formatBdDate(date, { month: "short", day: "numeric" });
 }
 
 function percentChange(current: number, previous: number) {
@@ -28,11 +25,9 @@ export type DashboardAnalytics = Awaited<
 
 export async function getDashboardAnalytics() {
   const now = new Date();
-  const today = startOfDay(now);
-  const last30Start = new Date(today);
-  last30Start.setDate(last30Start.getDate() - 29);
-  const prev30Start = new Date(last30Start);
-  prev30Start.setDate(prev30Start.getDate() - 30);
+  const today = startOfBdDay(now);
+  const last30Start = addBdDays(today, -29);
+  const prev30Start = addBdDays(last30Start, -30);
 
   const [
     productsTotal,
@@ -66,7 +61,7 @@ export async function getDashboardAnalytics() {
       },
     }),
     prisma.order.findMany({
-      where: { createdAt: { gte: prev30Start } },
+      where: { ...activeOrderWhere, createdAt: { gte: prev30Start } },
       select: {
         createdAt: true,
         total: true,
@@ -76,10 +71,12 @@ export async function getDashboardAnalytics() {
     }),
     prisma.order.groupBy({
       by: ["status"],
+      where: activeOrderWhere,
       _count: { _all: true },
     }),
     prisma.order.groupBy({
       by: ["paymentStatus"],
+      where: activeOrderWhere,
       _count: { _all: true },
     }),
     prisma.product.findMany({
@@ -96,6 +93,7 @@ export async function getDashboardAnalytics() {
       },
     }),
     prisma.order.findMany({
+      where: activeOrderWhere,
       take: 8,
       orderBy: { createdAt: "desc" },
       include: {
@@ -111,11 +109,12 @@ export async function getDashboardAnalytics() {
     }),
     prisma.order.count({
       where: {
+        ...activeOrderWhere,
         status: { in: ["PENDING", "CONFIRMED", "PROCESSING"] },
       },
     }),
     prisma.order.aggregate({
-      where: { paymentStatus: "PAID" },
+      where: { ...activeOrderWhere, paymentStatus: "PAID" },
       _sum: { total: true },
     }),
   ]);
@@ -146,16 +145,14 @@ export async function getDashboardAnalytics() {
 
   const dayKeys: string[] = [];
   for (let i = 0; i < 30; i += 1) {
-    const day = new Date(last30Start);
-    day.setDate(last30Start.getDate() + i);
-    dayKeys.push(toDayKey(day));
+    dayKeys.push(toBdDayKey(addBdDays(last30Start, i)));
   }
 
   const revenueByDay = new Map(dayKeys.map((key) => [key, 0]));
   const ordersByDay = new Map(dayKeys.map((key) => [key, 0]));
 
   for (const order of currentPeriodOrders) {
-    const key = toDayKey(order.createdAt);
+    const key = toBdDayKey(order.createdAt);
     ordersByDay.set(key, (ordersByDay.get(key) ?? 0) + 1);
     if (order.paymentStatus === "PAID") {
       revenueByDay.set(
@@ -166,7 +163,7 @@ export async function getDashboardAnalytics() {
   }
 
   const salesTrend = dayKeys.map((key) => {
-    const date = new Date(`${key}T00:00:00`);
+    const date = new Date(`${key}T12:00:00+06:00`);
     return {
       date: key,
       label: formatDayLabel(date),

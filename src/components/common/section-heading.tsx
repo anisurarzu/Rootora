@@ -30,7 +30,10 @@ export function SectionHeading({
           {eyebrow}
         </p>
       )}
-      <h2 className="font-heading text-3xl font-semibold text-heading md:text-4xl lg:text-5xl">
+      <h2 className={cn(
+        "font-heading font-semibold text-heading",
+        "text-2xl md:text-3xl lg:text-4xl"
+      )}>
         {title}
       </h2>
       {description && (

@@ -8,6 +8,7 @@ const PLACEHOLDER_CATEGORY = "/images/categories/placeholder.png";
 export const publishedProductInclude = {
   category: true,
   farmer: true,
+  variants: { orderBy: { value: "asc" } },
   reviews: { select: { rating: true } },
   _count: { select: { reviews: true } },
 } satisfies Prisma.ProductInclude;
@@ -111,6 +112,16 @@ export function mapDbProductToStorefront(product: DbProduct): Product {
     bestSeller: product.bestSeller,
     freshToday: product.freshToday,
     seasonal: product.seasonal,
+    variants: (product.variants ?? []).map((variant) => ({
+      id: variant.id,
+      name: variant.name,
+      value: variant.value,
+      image: variant.image,
+      price: variant.price != null ? Number(variant.price) : null,
+      salePrice: variant.salePrice != null ? Number(variant.salePrice) : null,
+      stockCount: variant.stockCount,
+      sku: variant.sku,
+    })),
   };
 }
 
@@ -128,7 +139,23 @@ export async function getStorefrontCategories(options?: {
     orderBy: { name: "asc" },
   });
 
-  const mapped = categories.map((category) => mapDbCategoryToStorefront(category));
+  // Clothing-first for ROOTORA's main focus
+  const categoryPriority: Record<string, number> = {
+    "traditional-clothing": 0,
+    "t-shirt": 1,
+    honey: 2,
+    sweets: 3,
+    "seasonal-fruits": 4,
+  };
+
+  const mapped = categories
+    .map((category) => mapDbCategoryToStorefront(category))
+    .sort((a, b) => {
+      const aRank = categoryPriority[a.slug] ?? 50;
+      const bRank = categoryPriority[b.slug] ?? 50;
+      if (aRank !== bRank) return aRank - bRank;
+      return a.name.localeCompare(b.name);
+    });
 
   if (options?.onlyWithProducts) {
     return mapped.filter((category) => category.productCount > 0);

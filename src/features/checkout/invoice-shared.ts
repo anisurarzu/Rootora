@@ -1,11 +1,11 @@
 import { formatPrice } from "@/lib/utils";
+import { formatBdDate, type DateInput } from "@/lib/datetime";
 import type { InvoiceOrder } from "@/features/checkout/invoice-types";
 
 export type { InvoiceOrder } from "@/features/checkout/invoice-types";
 
-export function formatInvoiceDate(date: string | Date) {
-  const value = typeof date === "string" ? new Date(date) : date;
-  return value.toLocaleDateString("en-BD", {
+export function formatInvoiceDate(date: DateInput) {
+  return formatBdDate(date, {
     year: "numeric",
     month: "long",
     day: "numeric",

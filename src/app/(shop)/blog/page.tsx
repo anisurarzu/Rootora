@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { SectionHeading } from "@/components/common/section-heading";
+import { formatBdDate } from "@/lib/datetime";
 import { blogPosts } from "@/lib/mock-data";
 
 export const metadata: Metadata = {
@@ -13,11 +14,11 @@ export const metadata: Metadata = {
 };
 
 function formatDate(dateStr: string): string {
-  return new Intl.DateTimeFormat("en-BD", {
+  return formatBdDate(dateStr, {
     year: "numeric",
     month: "long",
     day: "numeric",
-  }).format(new Date(dateStr));
+  });
 }
 
 export default function BlogPage() {

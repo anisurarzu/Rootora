@@ -320,6 +320,11 @@ export async function placeCodOrder(
               variantId: line.variantId || null,
             })),
           },
+          statusEvents: {
+            create: {
+              status: "PENDING",
+            },
+          },
         },
         select: {
           id: true,

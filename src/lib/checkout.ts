@@ -1,3 +1,5 @@
+import { getBdCalendarParts } from "@/lib/datetime";
+
 export const FREE_SHIPPING_THRESHOLD = 2000;
 export const STANDARD_SHIPPING_FEE = 120;
 
@@ -19,16 +21,15 @@ export function calculateOrderTotals(subtotal: number, discount = 0) {
   };
 }
 
-/** Prefix for today's orders: RT-{year}-{day}- */
+/** Prefix for today's orders in BD time: RT-{year}-{day}- */
 export function getOrderNumberPrefix(date = new Date()) {
-  const year = date.getFullYear();
-  const day = String(date.getDate()).padStart(2, "0");
-  return `RT-${year}-${day}-`;
+  const { year, day } = getBdCalendarParts(date);
+  return `RT-${year}-${String(day).padStart(2, "0")}-`;
 }
 
 /**
- * Format: RT-year-day-no
- * Example: RT-2026-16-0001
+ * Format: RT-year-day-no (Bangladesh calendar day)
+ * Example: RT-2026-18-0001
  */
 export function generateOrderNumber(sequence: number, date = new Date()) {
   const no = String(Math.max(1, sequence)).padStart(4, "0");

@@ -18,6 +18,7 @@ export const siteConfig = {
   },
   currency: "BDT",
   locale: "en-BD",
+  timeZone: "Asia/Dhaka",
   trialNotice: {
     enabled: true,
     launchLabel: "1 August 2026",

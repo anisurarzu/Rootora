@@ -10,7 +10,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { activeOrderWhere } from "@/features/orders/order-status-code";
 import { requireSession } from "@/lib/auth-server";
+import { formatBdDate } from "@/lib/datetime";
 import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
 
@@ -41,7 +43,7 @@ export default async function OrdersPage() {
   const session = await requireSession();
 
   const orders = await prisma.order.findMany({
-    where: { userId: session.user.id },
+    where: { userId: session.user.id, ...activeOrderWhere },
     orderBy: { createdAt: "desc" },
     include: {
       items: {
@@ -94,7 +96,7 @@ export default async function OrdersPage() {
                     </CardTitle>
                     <CardDescription>
                       Placed on{" "}
-                      {order.createdAt.toLocaleDateString("en-BD", {
+                      {formatBdDate(order.createdAt, {
                         year: "numeric",
                         month: "long",
                         day: "numeric",

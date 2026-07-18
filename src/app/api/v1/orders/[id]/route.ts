@@ -5,6 +5,7 @@ import {
   apiOptions,
   handleApiError,
 } from "@/lib/api/response";
+import { activeOrderWhere } from "@/features/orders/order-status-code";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,7 @@ export async function GET(request: Request, context: RouteContext) {
     const order = await prisma.order.findFirst({
       where: {
         userId: user.id,
+        ...activeOrderWhere,
         OR: [{ id }, { orderNumber: id }],
       },
       include: {

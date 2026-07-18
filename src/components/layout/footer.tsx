@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { FOOTER_LINKS } from "@/constants/navigation";
 import { siteConfig } from "@/config/site";
+import { getBdYear } from "@/lib/datetime";
 
 export function Footer() {
   return (
@@ -91,7 +92,7 @@ export function Footer() {
 
         <div className="flex flex-col items-center justify-between gap-4 text-sm text-muted-foreground md:flex-row">
           <p>
-            &copy; {new Date().getFullYear()} {siteConfig.name}. All rights
+            &copy; {getBdYear()} {siteConfig.name}. All rights
             reserved.
           </p>
           <p className="font-button text-xs">
@@ -146,7 +147,7 @@ function SocialLink({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground transition-all hover:border-primary hover:text-primary hover:shadow-soft"
+      className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
     >
       {children}
     </a>

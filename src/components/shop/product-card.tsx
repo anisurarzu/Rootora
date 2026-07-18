@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ProductImage } from "@/components/shop/product-image";
+import { ProductTitle } from "@/components/shop/product-title";
 import { useCartStore } from "@/features/cart/store/cart-store";
 import { useWishlistStore } from "@/features/wishlist/store/wishlist-store";
 import { cn, formatPrice, getDiscountPercentage } from "@/lib/utils";
@@ -71,7 +72,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
                 <Badge
                   key={badge.label}
                   variant={badge.variant}
-                  className="h-4 px-1 text-[8px] font-semibold uppercase tracking-wide"
+                  className="h-4 px-1 text-[9px] font-semibold uppercase tracking-wide"
                 >
                   {badge.label}
                 </Badge>
@@ -83,7 +84,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
             variant="outline"
             size="icon"
             className={cn(
-              "absolute right-1.5 top-1.5 h-6 w-6 rounded-full border-border/60 bg-surface/90 shadow-soft backdrop-blur-sm transition-all",
+              "absolute right-1.5 top-1.5 h-7 w-7 rounded-full border-border/60 bg-surface/90 shadow-soft backdrop-blur-sm transition-all",
               "opacity-100 sm:opacity-0 sm:group-hover:opacity-100",
               inWishlist && "opacity-100"
             )}
@@ -100,7 +101,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
 
           <div className="absolute inset-x-0 bottom-0 translate-y-full bg-gradient-to-t from-black/10 to-transparent p-1.5 transition-transform duration-300 group-hover:translate-y-0">
             <Button
-              className="h-6 w-full text-[10px]"
+              className="h-7 w-full text-[11px]"
               size="sm"
               onClick={handleAddToCart}
             >
@@ -110,38 +111,35 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
           </div>
         </div>
 
-        <div className="flex min-h-[4.75rem] flex-1 flex-col px-2.5 pb-2 pt-1.5">
-          <p className="truncate text-[8px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+        <div className="flex flex-1 flex-col px-2.5 pb-2.5 pt-2">
+          <p className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             {product.category.name}
           </p>
 
-          <h3 className="mt-0.5 min-h-[1.875rem] font-heading text-[13px] font-medium leading-snug text-heading line-clamp-2">
-            {product.name}
+          <h3 className="mt-0.5 font-heading text-sm font-medium leading-snug text-heading line-clamp-2 sm:text-[15px]">
+            <ProductTitle name={product.name} size="card" />
           </h3>
 
-          <p
-            className={cn(
-              "mt-0.5 h-3 truncate text-[9px] text-muted-foreground",
-              !product.farmer && "invisible"
-            )}
-          >
-            {product.farmer ? `by ${product.farmer.name}` : "—"}
-          </p>
+          {product.farmer ? (
+            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+              by {product.farmer.name}
+            </p>
+          ) : null}
 
-          <div className="mt-auto flex items-center justify-between gap-2 pt-1">
+          <div className="mt-1.5 flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-baseline gap-1">
-              <span className="truncate font-button text-xs font-bold text-primary">
+              <span className="truncate font-button text-sm font-bold text-primary">
                 {formatPrice(product.price)}
               </span>
               {hasDiscount && (
-                <span className="shrink-0 text-[8px] text-muted-foreground line-through">
+                <span className="shrink-0 text-[10px] text-muted-foreground line-through">
                   {formatPrice(product.originalPrice!)}
                 </span>
               )}
             </div>
             <div className="flex shrink-0 items-center gap-0.5">
-              <Star className="h-2.5 w-2.5 fill-warning text-warning" />
-              <span className="text-[10px] font-medium">{product.rating}</span>
+              <Star className="h-3 w-3 fill-warning text-warning" />
+              <span className="text-[11px] font-medium">{product.rating}</span>
             </div>
           </div>
         </div>

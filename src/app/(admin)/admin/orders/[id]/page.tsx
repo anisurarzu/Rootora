@@ -9,11 +9,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { OrderActions } from "@/features/admin/components/order-actions";
+import { ORDER_STATUS_CODE_DELETED } from "@/features/orders/order-status-code";
 import {
   getPermissionsForRole,
   requirePermission,
 } from "@/lib/auth-server";
 import { formatPrice } from "@/lib/utils";
+import { formatBdDateTime } from "@/lib/datetime";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -44,7 +46,7 @@ export default async function AdminOrderDetailPage({
     },
   });
 
-  if (!order) {
+  if (!order || order.statusCode === ORDER_STATUS_CODE_DELETED) {
     notFound();
   }
 
@@ -62,7 +64,7 @@ export default async function AdminOrderDetailPage({
             Order #{order.orderNumber}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Placed {order.createdAt.toLocaleString("en-BD")}
+            Placed {formatBdDateTime(order.createdAt)}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -197,6 +199,7 @@ export default async function AdminOrderDetailPage({
             <CardContent>
               <OrderActions
                 orderId={order.id}
+                orderNumber={order.orderNumber}
                 status={order.status}
                 paymentStatus={order.paymentStatus}
                 notes={order.notes}

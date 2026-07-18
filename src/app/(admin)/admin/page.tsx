@@ -12,6 +12,7 @@ import { DashboardCharts } from "@/features/admin/dashboard/dashboard-charts";
 import { DashboardKpis } from "@/features/admin/dashboard/dashboard-kpis";
 import { getDashboardAnalytics } from "@/features/admin/dashboard/get-dashboard-analytics";
 import { requirePermission } from "@/lib/auth-server";
+import { formatBdDate, formatBdDateTime } from "@/lib/datetime";
 import { formatPrice } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +37,7 @@ export default async function AdminDashboardPage() {
         </div>
         <p className="text-xs text-muted-foreground">
           Updated{" "}
-          {new Date(analytics.generatedAt).toLocaleString("en-BD", {
+          {formatBdDateTime(analytics.generatedAt, {
             dateStyle: "medium",
             timeStyle: "short",
           })}
@@ -102,7 +103,7 @@ export default async function AdminDashboardPage() {
                             #{order.orderNumber}
                           </Link>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(order.createdAt).toLocaleDateString("en-BD")}
+                            {formatBdDate(order.createdAt)}
                           </p>
                         </td>
                         <td className="px-6 py-3">

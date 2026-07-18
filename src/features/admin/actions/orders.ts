@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { OrderStatus, PaymentStatus } from "@prisma/client";
 import type { ActionResult } from "@/features/admin/types";
+import { ORDER_STATUS_CODE_DELETED } from "@/features/orders/order-status-code";
 import { requirePermission } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 
@@ -26,6 +27,8 @@ const validPaymentStatuses: PaymentStatus[] = [
 function revalidate(orderId?: string) {
   revalidatePath("/admin/orders");
   revalidatePath("/admin");
+  revalidatePath("/account/orders");
+  revalidatePath("/track-order");
   if (orderId) {
     revalidatePath(`/admin/orders/${orderId}`);
   }
@@ -43,20 +46,80 @@ export async function updateOrderStatus(input: {
 
   const order = await prisma.order.findUnique({
     where: { id: input.orderId },
-    select: { id: true },
+    select: { id: true, status: true, statusCode: true },
   });
 
-  if (!order) {
+  if (!order || order.statusCode === ORDER_STATUS_CODE_DELETED) {
     return { success: false, error: "Order not found." };
   }
+
+  if (order.status === input.status) {
+    return { success: true, message: "Order status unchanged." };
+  }
+
+  const changedAt = new Date();
 
   await prisma.order.update({
     where: { id: input.orderId },
     data: { status: input.status },
   });
 
+  await prisma.orderStatusEvent.create({
+    data: {
+      orderId: input.orderId,
+      status: input.status,
+      createdAt: changedAt,
+    },
+  });
+
   revalidate(input.orderId);
   return { success: true, message: "Order status updated." };
+}
+
+/** Soft-delete: hide from UI, keep row with statusCode 255. */
+export async function softDeleteOrder(input: {
+  orderId: string;
+}): Promise<ActionResult> {
+  await requirePermission("orders.manage");
+
+  if (!input.orderId) {
+    return { success: false, error: "Order id is required." };
+  }
+
+  const order = await prisma.order.findUnique({
+    where: { id: input.orderId },
+    select: { id: true, statusCode: true, status: true },
+  });
+
+  if (!order) {
+    return { success: false, error: "Order not found." };
+  }
+
+  if (order.statusCode === ORDER_STATUS_CODE_DELETED) {
+    return { success: true, message: "Order deleted." };
+  }
+
+  const deletedAt = new Date();
+
+  await prisma.order.update({
+    where: { id: input.orderId },
+    data: { statusCode: ORDER_STATUS_CODE_DELETED },
+  });
+
+  await prisma.orderStatusEvent.create({
+    data: {
+      orderId: input.orderId,
+      status: order.status,
+      note: "Deleted",
+      createdAt: deletedAt,
+    },
+  });
+
+  revalidate(input.orderId);
+  return {
+    success: true,
+    message: "Order deleted.",
+  };
 }
 
 export async function updatePaymentStatus(input: {
@@ -71,10 +134,10 @@ export async function updatePaymentStatus(input: {
 
   const order = await prisma.order.findUnique({
     where: { id: input.orderId },
-    select: { id: true },
+    select: { id: true, statusCode: true },
   });
 
-  if (!order) {
+  if (!order || order.statusCode === ORDER_STATUS_CODE_DELETED) {
     return { success: false, error: "Order not found." };
   }
 
@@ -95,10 +158,10 @@ export async function updateOrderNotes(input: {
 
   const order = await prisma.order.findUnique({
     where: { id: input.orderId },
-    select: { id: true },
+    select: { id: true, statusCode: true },
   });
 
-  if (!order) {
+  if (!order || order.statusCode === ORDER_STATUS_CODE_DELETED) {
     return { success: false, error: "Order not found." };
   }
 

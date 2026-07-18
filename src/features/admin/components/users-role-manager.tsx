@@ -20,6 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { assignUserRole } from "@/features/admin/actions/roles";
+import { formatBdDate } from "@/lib/datetime";
 
 type UserRow = {
   id: string;
@@ -164,7 +165,7 @@ export function UsersRoleManager({
                       </Select>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {new Date(user.createdAt).toLocaleDateString()}
+                      {formatBdDate(user.createdAt)}
                     </td>
                   </tr>
                 ))

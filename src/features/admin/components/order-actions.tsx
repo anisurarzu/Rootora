@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { OrderStatus, PaymentStatus } from "@prisma/client";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -14,10 +15,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  softDeleteOrder,
   updateOrderNotes,
   updateOrderStatus,
   updatePaymentStatus,
 } from "@/features/admin/actions/orders";
+import { ConfirmDialog } from "@/features/admin/products/components/confirm-dialog";
 
 const orderStatuses: OrderStatus[] = [
   "PENDING",
@@ -38,6 +41,7 @@ const paymentStatuses: PaymentStatus[] = [
 
 type OrderActionsProps = {
   orderId: string;
+  orderNumber: string;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
   notes: string | null;
@@ -46,6 +50,7 @@ type OrderActionsProps = {
 
 export function OrderActions({
   orderId,
+  orderNumber,
   status,
   paymentStatus,
   notes,
@@ -53,9 +58,44 @@ export function OrderActions({
 }: OrderActionsProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(status);
   const [currentPayment, setCurrentPayment] = useState(paymentStatus);
   const [currentNotes, setCurrentNotes] = useState(notes ?? "");
+
+  useEffect(() => {
+    setCurrentStatus(status);
+  }, [status]);
+
+  useEffect(() => {
+    setCurrentPayment(paymentStatus);
+  }, [paymentStatus]);
+
+  useEffect(() => {
+    setCurrentNotes(notes ?? "");
+  }, [notes]);
+
+  if (pending && !deleteOpen) {
+    return (
+      <div className="space-y-4" aria-busy="true" aria-live="polite">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-10 w-28" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -66,7 +106,7 @@ export function OrderActions({
             <Select
               value={currentStatus}
               onValueChange={(value) => setCurrentStatus(value as OrderStatus)}
-              disabled={!canManage || pending}
+              disabled={!canManage}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -82,7 +122,7 @@ export function OrderActions({
             <Button
               type="button"
               variant="outline"
-              disabled={!canManage || pending}
+              disabled={!canManage}
               onClick={() =>
                 startTransition(async () => {
                   const result = await updateOrderStatus({
@@ -111,7 +151,7 @@ export function OrderActions({
               onValueChange={(value) =>
                 setCurrentPayment(value as PaymentStatus)
               }
-              disabled={!canManage || pending}
+              disabled={!canManage}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -127,7 +167,7 @@ export function OrderActions({
             <Button
               type="button"
               variant="outline"
-              disabled={!canManage || pending}
+              disabled={!canManage}
               onClick={() =>
                 startTransition(async () => {
                   const result = await updatePaymentStatus({
@@ -154,12 +194,12 @@ export function OrderActions({
         <Textarea
           rows={4}
           value={currentNotes}
-          disabled={!canManage || pending}
+          disabled={!canManage}
           onChange={(event) => setCurrentNotes(event.target.value)}
         />
         <Button
           type="button"
-          disabled={!canManage || pending}
+          disabled={!canManage}
           onClick={() =>
             startTransition(async () => {
               const result = await updateOrderNotes({
@@ -178,6 +218,42 @@ export function OrderActions({
           Save notes
         </Button>
       </div>
+
+      {canManage ? (
+        <div className="border-t border-border pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => setDeleteOpen(true)}
+          >
+            Delete order
+          </Button>
+        </div>
+      ) : null}
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={(open) => !pending && setDeleteOpen(open)}
+        title="Delete order?"
+        description={`Are you sure you want to delete order #${orderNumber}?`}
+        confirmLabel="Delete order"
+        tone="danger"
+        loading={pending}
+        onConfirm={() =>
+          startTransition(async () => {
+            const result = await softDeleteOrder({ orderId });
+            if (!result.success) {
+              toast.error(result.error);
+              return;
+            }
+            toast.success(result.message);
+            setDeleteOpen(false);
+            router.push("/admin/orders");
+            router.refresh();
+          })
+        }
+      />
     </div>
   );
 }

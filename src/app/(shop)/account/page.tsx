@@ -17,6 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { SignOutButton } from "@/features/auth/components/sign-out-button";
+import { activeOrderWhere } from "@/features/orders/order-status-code";
 import { canAccessAdmin, requireSession } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 
@@ -62,7 +63,7 @@ export default async function AccountPage() {
   });
 
   const orderCount = await prisma.order.count({
-    where: { userId: session.user.id },
+    where: { userId: session.user.id, ...activeOrderWhere },
   });
 
   const hasAdminAccess = await canAccessAdmin(user?.role ?? session.user.role);

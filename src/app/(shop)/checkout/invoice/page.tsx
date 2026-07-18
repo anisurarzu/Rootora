@@ -37,12 +37,15 @@ export default async function CheckoutInvoicePage({
       <div className="container-rootora section-padding">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 print:hidden">
           <div>
-            <h1 className="font-heading text-2xl font-semibold text-heading">
+            <h1 className="font-body text-2xl font-semibold text-heading">
               Invoice
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Order #{order.orderNumber} · Use Download PDF / Print to save a
-              copy.
+            <p className="mt-1 font-body text-sm text-muted-foreground">
+              Order{" "}
+              <span className="font-medium tabular-nums text-foreground">
+                {order.orderNumber}
+              </span>{" "}
+              · Print or download PDF to save a copy.
             </p>
           </div>
           <Button asChild variant="outline">
