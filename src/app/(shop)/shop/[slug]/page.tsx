@@ -208,11 +208,93 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <h3 className="font-button text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                 Description
               </h3>
-              <p className="mt-3 leading-relaxed text-muted-foreground">
+              <p className="mt-3 whitespace-pre-line leading-relaxed text-muted-foreground">
                 {product.description}
               </p>
             </div>
             <div className="space-y-6">
+              {(product.brand ||
+                product.shelfLife ||
+                (product.ingredients && product.ingredients.length > 0) ||
+                product.storageInstruction ||
+                product.nutrition) && (
+                <div>
+                  <h3 className="font-button text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                    Specifications
+                  </h3>
+                  <dl className="mt-3 overflow-hidden rounded-xl border border-border">
+                    {[
+                      product.brand
+                        ? { label: "Brand", value: product.brand }
+                        : null,
+                      { label: "Net / Unit", value: product.unit },
+                      { label: "Origin", value: product.origin },
+                      product.shelfLife
+                        ? { label: "Shelf life", value: product.shelfLife }
+                        : null,
+                      product.ingredients && product.ingredients.length > 0
+                        ? {
+                            label: "Ingredients",
+                            value: product.ingredients.join(", "),
+                          }
+                        : null,
+                      product.organic
+                        ? { label: "Quality", value: "Organic / 100% Natural" }
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .map((row) => (
+                        <div
+                          key={row!.label}
+                          className="grid grid-cols-[140px_1fr] border-b border-border last:border-0"
+                        >
+                          <dt className="bg-muted/40 px-3 py-2.5 font-button text-xs font-semibold text-heading">
+                            {row!.label}
+                          </dt>
+                          <dd className="px-3 py-2.5 text-sm text-muted-foreground">
+                            {row!.value}
+                          </dd>
+                        </div>
+                      ))}
+                  </dl>
+
+                  {product.nutrition &&
+                    Object.keys(product.nutrition).length > 0 && (
+                      <div className="mt-4">
+                        <p className="font-button text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Nutrition (approx.)
+                        </p>
+                        <dl className="mt-2 overflow-hidden rounded-xl border border-border">
+                          {Object.entries(product.nutrition).map(
+                            ([label, value]) => (
+                              <div
+                                key={label}
+                                className="grid grid-cols-[140px_1fr] border-b border-border last:border-0"
+                              >
+                                <dt className="bg-muted/40 px-3 py-2.5 font-button text-xs font-semibold text-heading">
+                                  {label}
+                                </dt>
+                                <dd className="px-3 py-2.5 text-sm text-muted-foreground">
+                                  {value}
+                                </dd>
+                              </div>
+                            )
+                          )}
+                        </dl>
+                      </div>
+                    )}
+
+                  {product.storageInstruction ? (
+                    <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                      <span className="font-button font-semibold text-heading">
+                        Storage:{" "}
+                      </span>
+                      {product.storageInstruction}
+                    </p>
+                  ) : null}
+                </div>
+              )}
+
               <div>
                 <h3 className="font-button text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                   Tags

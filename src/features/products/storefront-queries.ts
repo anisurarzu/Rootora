@@ -108,6 +108,20 @@ export function mapDbProductToStorefront(product: DbProduct): Product {
     tags: product.tags,
     unit: product.unit ?? "piece",
     origin: product.origin ?? product.country ?? "Bangladesh",
+    brand: product.brand ?? undefined,
+    ingredients: product.ingredients ?? [],
+    storageInstruction: product.storageInstruction ?? undefined,
+    shelfLife: product.shelfLife ?? undefined,
+    nutrition:
+      product.nutrition &&
+      typeof product.nutrition === "object" &&
+      !Array.isArray(product.nutrition)
+        ? Object.fromEntries(
+            Object.entries(product.nutrition as Record<string, unknown>).map(
+              ([key, value]) => [key, String(value)]
+            )
+          )
+        : undefined,
     featured: product.featured,
     bestSeller: product.bestSeller,
     freshToday: product.freshToday,

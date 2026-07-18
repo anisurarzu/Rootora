@@ -40,6 +40,11 @@ export interface Product {
   tags: string[];
   unit: string;
   origin: string;
+  brand?: string;
+  ingredients?: string[];
+  storageInstruction?: string;
+  shelfLife?: string;
+  nutrition?: Record<string, string>;
   featured?: boolean;
   bestSeller?: boolean;
   freshToday?: boolean;
