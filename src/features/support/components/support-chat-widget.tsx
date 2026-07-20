@@ -4,8 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MessageCircle, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { TypingDots } from "@/features/support/components/typing-dots";
 import type { SupportChatMessage } from "@/features/support/types";
-import { useSupportRealtime } from "@/features/support/use-support-realtime";
+import {
+  publishTyping,
+  useSupportRealtime,
+} from "@/features/support/use-support-realtime";
 import { cn } from "@/lib/utils";
 
 const VISITOR_KEY = "rootora_support_visitor_id";
@@ -49,12 +53,51 @@ export function SupportChatWidget() {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [agentTyping, setAgentTyping] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const bootstrappedRef = useRef(false);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTypingSentRef = useRef(false);
 
   useEffect(() => {
     setVisitorId(getVisitorId());
   }, []);
+
+  // Lock page scroll while chat is open (mobile keyboard friendly).
+  useEffect(() => {
+    if (!open) return;
+    const prevOverflow = document.body.style.overflow;
+    const prevTouch = document.body.style.touchAction;
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.touchAction = prevTouch;
+    };
+  }, [open]);
+
+  // Keep panel height aligned with visual viewport when mobile keyboard opens.
+  useEffect(() => {
+    if (!open || typeof window === "undefined") return;
+
+    const vv = window.visualViewport;
+    const update = () => {
+      const height = vv?.height ?? window.innerHeight;
+      setViewportHeight(height);
+    };
+
+    update();
+    vv?.addEventListener("resize", update);
+    vv?.addEventListener("scroll", update);
+    window.addEventListener("resize", update);
+
+    return () => {
+      vv?.removeEventListener("resize", update);
+      vv?.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [open]);
 
   const scrollToBottom = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -62,7 +105,7 @@ export function SupportChatWidget() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, open, scrollToBottom]);
+  }, [messages, open, agentTyping, scrollToBottom]);
 
   const bootstrap = useCallback(async (opts?: { silent?: boolean }) => {
     if (!visitorId) return;
@@ -97,14 +140,14 @@ export function SupportChatWidget() {
     }
     if (!open) {
       bootstrappedRef.current = false;
+      setAgentTyping(false);
+      lastTypingSentRef.current = false;
     }
   }, [open, visitorId, bootstrap]);
 
   const realtimeJoin = useMemo(
     () =>
-      open && visitorId
-        ? { visitorId, role: "visitor" as const }
-        : null,
+      open && visitorId ? { visitorId, role: "visitor" as const } : null,
     [open, visitorId]
   );
 
@@ -116,6 +159,7 @@ export function SupportChatWidget() {
       setStatus(event.status);
       setNeedsEmail(event.needsEmailForAgent);
       setMessages((prev) => mergeMessages(prev, event.messages));
+      setAgentTyping(false);
       return;
     }
 
@@ -123,8 +167,44 @@ export function SupportChatWidget() {
       if (event.conversationId) setConversationId(event.conversationId);
       setStatus(event.status);
       setNeedsEmail(!event.guestEmail);
+      return;
+    }
+
+    if (event.type === "typing" && event.role === "agent") {
+      setAgentTyping(event.isTyping);
     }
   });
+
+  const notifyTyping = useCallback(
+    (isTyping: boolean) => {
+      if (!conversationId || !visitorId) return;
+      if (lastTypingSentRef.current === isTyping) return;
+      lastTypingSentRef.current = isTyping;
+      void publishTyping({
+        conversationId,
+        visitorId,
+        role: "visitor",
+        isTyping,
+      });
+    },
+    [conversationId, visitorId]
+  );
+
+  const onDraftChange = (value: string) => {
+    setDraft(value);
+    if (!conversationId) return;
+
+    if (value.trim()) {
+      notifyTyping(true);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        notifyTyping(false);
+      }, 1200);
+    } else {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      notifyTyping(false);
+    }
+  };
 
   const sendMessage = async () => {
     const body = draft.trim();
@@ -133,6 +213,7 @@ export function SupportChatWidget() {
     setSending(true);
     setError(null);
     setDraft("");
+    notifyTyping(false);
     try {
       const res = await fetch("/api/v1/support/messages", {
         method: "POST",
@@ -192,10 +273,27 @@ export function SupportChatWidget() {
   const showConnecting = loading && messages.length === 0;
 
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-[90] flex flex-col items-end gap-3 md:bottom-6 md:right-6">
+    <div
+      className={cn(
+        "pointer-events-none z-[90]",
+        open
+          ? "fixed inset-0 md:inset-auto md:bottom-6 md:right-6"
+          : "fixed bottom-4 right-4 md:bottom-6 md:right-6"
+      )}
+    >
       {open ? (
-        <div className="pointer-events-auto flex h-[min(32rem,70vh)] w-[min(100vw-2rem,22rem)] flex-col overflow-hidden rounded-xl border border-border bg-white shadow-2xl">
-          <div className="flex items-center justify-between bg-primary px-4 py-3 text-primary-foreground">
+        <div
+          className="pointer-events-auto flex w-full flex-col overflow-hidden bg-white md:h-[min(32rem,70vh)] md:w-[22rem] md:rounded-xl md:border md:border-border md:shadow-2xl"
+          style={
+            viewportHeight
+              ? {
+                  height: viewportHeight,
+                  maxHeight: viewportHeight,
+                }
+              : { height: "100dvh" }
+          }
+        >
+          <div className="flex shrink-0 items-center justify-between bg-primary px-4 py-3 text-primary-foreground">
             <div>
               <p className="font-button text-sm font-semibold">ROOTORA Support</p>
               <p className="text-[11px] text-primary-foreground/80">
@@ -220,38 +318,41 @@ export function SupportChatWidget() {
             </Button>
           </div>
 
-          <div className="flex-1 space-y-2.5 overflow-y-auto bg-muted/20 p-3">
+          <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto overscroll-contain bg-muted/20 p-3">
             {showConnecting ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
                 Connecting…
               </p>
             ) : (
-              messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={cn(
-                    "max-w-[85%] rounded-lg px-3 py-2 text-sm leading-relaxed",
-                    msg.sender === "VISITOR"
-                      ? "ml-auto bg-primary text-primary-foreground"
-                      : msg.sender === "AGENT"
-                        ? "bg-emerald-50 text-heading ring-1 ring-emerald-100"
-                        : "bg-white text-heading shadow-sm ring-1 ring-border/60"
-                  )}
-                >
-                  {msg.sender !== "VISITOR" ? (
-                    <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      {msg.sender === "AGENT" ? "Support" : "Assistant"}
-                    </p>
-                  ) : null}
-                  <p className="whitespace-pre-wrap">{msg.body}</p>
-                </div>
-              ))
+              <>
+                {messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={cn(
+                      "max-w-[85%] rounded-lg px-3 py-2 text-sm leading-relaxed",
+                      msg.sender === "VISITOR"
+                        ? "ml-auto bg-primary text-primary-foreground"
+                        : msg.sender === "AGENT"
+                          ? "bg-emerald-50 text-heading ring-1 ring-emerald-100"
+                          : "bg-white text-heading shadow-sm ring-1 ring-border/60"
+                    )}
+                  >
+                    {msg.sender !== "VISITOR" ? (
+                      <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        {msg.sender === "AGENT" ? "Support" : "Assistant"}
+                      </p>
+                    ) : null}
+                    <p className="whitespace-pre-wrap">{msg.body}</p>
+                  </div>
+                ))}
+                {agentTyping ? <TypingDots label="Support is typing" /> : null}
+              </>
             )}
             <div ref={bottomRef} />
           </div>
 
           {needsEmail && showEmailForm ? (
-            <div className="space-y-2 border-t border-border bg-amber-50/80 p-3">
+            <div className="shrink-0 space-y-2 border-t border-border bg-amber-50/80 p-3">
               <p className="text-xs font-medium text-heading">
                 Share your email to talk with our support team
               </p>
@@ -292,12 +393,12 @@ export function SupportChatWidget() {
           ) : null}
 
           {error ? (
-            <p className="border-t border-destructive/20 bg-destructive/5 px-3 py-1.5 text-xs text-destructive">
+            <p className="shrink-0 border-t border-destructive/20 bg-destructive/5 px-3 py-1.5 text-xs text-destructive">
               {error}
             </p>
           ) : null}
 
-          <div className="border-t border-border p-2">
+          <div className="shrink-0 border-t border-border bg-white p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
             {needsEmail && !showEmailForm ? (
               <button
                 type="button"
@@ -316,11 +417,13 @@ export function SupportChatWidget() {
             >
               <Input
                 value={draft}
-                onChange={(e) => setDraft(e.target.value)}
+                onChange={(e) => onDraftChange(e.target.value)}
                 placeholder="Type a message…"
                 className="h-10"
                 disabled={sending}
                 maxLength={2000}
+                enterKeyHint="send"
+                autoComplete="off"
               />
               <Button
                 type="submit"
@@ -336,18 +439,18 @@ export function SupportChatWidget() {
         </div>
       ) : null}
 
-      <Button
-        type="button"
-        size="lg"
-        className="pointer-events-auto h-12 rounded-full px-4 shadow-lg"
-        onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Close support chat" : "Open support chat"}
-      >
-        {open ? <X className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
-        <span className="ml-1.5 hidden sm:inline">
-          {open ? "Close" : "Chat"}
-        </span>
-      </Button>
+      {!open ? (
+        <Button
+          type="button"
+          size="lg"
+          className="pointer-events-auto h-12 rounded-full px-4 shadow-lg"
+          onClick={() => setOpen(true)}
+          aria-label="Open support chat"
+        >
+          <MessageCircle className="h-5 w-5" />
+          <span className="ml-1.5 hidden sm:inline">Chat</span>
+        </Button>
+      ) : null}
     </div>
   );
 }

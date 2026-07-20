@@ -345,6 +345,23 @@ export async function updateConversationStatus(
   });
 }
 
+export async function deleteSupportConversation(conversationId: string) {
+  const existing = await prisma.supportConversation.findUnique({
+    where: { id: conversationId },
+    select: { id: true, visitorId: true },
+  });
+
+  if (!existing) {
+    throw new Error("Conversation not found");
+  }
+
+  await prisma.supportConversation.delete({
+    where: { id: conversationId },
+  });
+
+  return existing;
+}
+
 export async function getVisitorConversationSince(
   visitorId: string,
   since?: string

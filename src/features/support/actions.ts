@@ -6,6 +6,7 @@ import type { ActionResult } from "@/features/admin/types";
 import {
   sendAgentReply,
   updateConversationStatus,
+  deleteSupportConversation,
 } from "@/features/support/service";
 import { publishSupportRealtime } from "@/features/support/realtime";
 import { requirePermission } from "@/lib/auth-server";
@@ -70,6 +71,29 @@ export async function closeSupportConversation(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Could not close chat",
+    };
+  }
+}
+
+export async function deleteSupportChat(
+  conversationId: string
+): Promise<ActionResult> {
+  await requirePermission(["admin.access"]);
+
+  try {
+    const deleted = await deleteSupportConversation(conversationId);
+    publishSupportRealtime({
+      type: "conversation:update",
+      conversationId: deleted.id,
+      visitorId: deleted.visitorId,
+      status: "CLOSED",
+    });
+    revalidatePath("/admin/support");
+    return { success: true, message: "Conversation deleted" };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Could not delete chat",
     };
   }
 }

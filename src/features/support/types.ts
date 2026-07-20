@@ -22,6 +22,13 @@ export type SupportRealtimeEvent =
       status: string;
       guestEmail?: string | null;
       guestName?: string | null;
+    }
+  | {
+      type: "typing";
+      conversationId: string;
+      visitorId: string;
+      role: "visitor" | "agent";
+      isTyping: boolean;
     };
 
 export const SUPPORT_SOCKET_PATH = "/api/support/socket";

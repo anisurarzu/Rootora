@@ -2,16 +2,22 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   closeSupportConversation,
+  deleteSupportChat,
   replyToSupportChat,
 } from "@/features/support/actions";
+import { TypingDots } from "@/features/support/components/typing-dots";
 import type { SupportChatMessage } from "@/features/support/types";
-import { useSupportRealtime } from "@/features/support/use-support-realtime";
+import {
+  publishTyping,
+  useSupportRealtime,
+} from "@/features/support/use-support-realtime";
 import { cn } from "@/lib/utils";
 
 function formatChatTime(value: string) {
@@ -41,6 +47,7 @@ type ChatMessage = SupportChatMessage;
 
 type ConversationDetail = {
   id: string;
+  visitorId?: string;
   guestEmail: string | null;
   guestName: string | null;
   status: string;
@@ -62,18 +69,22 @@ export function AdminSupportInbox({
   const [detail, setDetail] = useState(initialConversation);
   const [draft, setDraft] = useState("");
   const [pending, startTransition] = useTransition();
+  const [visitorTyping, setVisitorTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTypingSentRef = useRef(false);
 
   useEffect(() => {
     setDetail(initialConversation);
     setSelectedId(initialConversation?.id ?? "");
+    setVisitorTyping(false);
+    lastTypingSentRef.current = false;
   }, [initialConversation]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [detail?.messages.length]);
+  }, [detail?.messages.length, visitorTyping]);
 
-  // Keep conversation list fresh on Vercel (no Socket.IO publisher there).
   useEffect(() => {
     const id = window.setInterval(() => {
       router.refresh();
@@ -87,6 +98,7 @@ export function AdminSupportInbox({
       : { role: "admin" },
     (event) => {
       if (event.type === "message" && event.conversationId === selectedId) {
+        setVisitorTyping(false);
         setDetail((prev) => {
           if (!prev || prev.id !== event.conversationId) return prev;
 
@@ -101,6 +113,7 @@ export function AdminSupportInbox({
               ...prev,
               status: event.status,
               messages: event.messages,
+              visitorId: event.visitorId,
             };
           }
 
@@ -113,6 +126,7 @@ export function AdminSupportInbox({
             ...prev,
             status: event.status,
             messages: nextMessages,
+            visitorId: event.visitorId,
           };
         });
       }
@@ -120,12 +134,51 @@ export function AdminSupportInbox({
       if (event.type === "conversation:update") {
         router.refresh();
       }
+
+      if (
+        event.type === "typing" &&
+        event.conversationId === selectedId &&
+        event.role === "visitor"
+      ) {
+        setVisitorTyping(event.isTyping);
+      }
     }
   );
+
+  const notifyTyping = useCallback(
+    (isTyping: boolean) => {
+      if (!selectedId) return;
+      if (lastTypingSentRef.current === isTyping) return;
+      lastTypingSentRef.current = isTyping;
+      void publishTyping({
+        conversationId: selectedId,
+        role: "agent",
+        isTyping,
+      });
+    },
+    [selectedId]
+  );
+
+  const onDraftChange = (value: string) => {
+    setDraft(value);
+    if (!selectedId) return;
+
+    if (value.trim()) {
+      notifyTyping(true);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        notifyTyping(false);
+      }, 1200);
+    } else {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      notifyTyping(false);
+    }
+  };
 
   const sendReply = () => {
     if (!selectedId || !draft.trim()) return;
     const body = draft.trim();
+    notifyTyping(false);
     startTransition(async () => {
       const result = await replyToSupportChat(selectedId, body);
       if (!result.success) {
@@ -147,6 +200,27 @@ export function AdminSupportInbox({
         return;
       }
       toast.success("Conversation closed");
+      router.refresh();
+    });
+  };
+
+  const deleteChat = () => {
+    if (!selectedId) return;
+    const ok = window.confirm(
+      "Delete this conversation permanently? This cannot be undone."
+    );
+    if (!ok) return;
+
+    startTransition(async () => {
+      const result = await deleteSupportChat(selectedId);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success("Conversation deleted");
+      setDetail(null);
+      setSelectedId("");
+      router.push("/admin/support");
       router.refresh();
     });
   };
@@ -217,7 +291,7 @@ export function AdminSupportInbox({
                   </p>
                 ) : null}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-end gap-2">
                 <StatusPill status={detail.status} />
                 {detail.status !== "CLOSED" ? (
                   <Button
@@ -230,6 +304,17 @@ export function AdminSupportInbox({
                     Close
                   </Button>
                 ) : null}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={pending}
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={deleteChat}
+                >
+                  <Trash2 className="mr-1 h-3.5 w-3.5" />
+                  Delete
+                </Button>
               </div>
             </div>
 
@@ -258,6 +343,9 @@ export function AdminSupportInbox({
                   <p className="whitespace-pre-wrap">{msg.body}</p>
                 </div>
               ))}
+              {visitorTyping ? (
+                <TypingDots label="Customer is typing" />
+              ) : null}
               <div ref={bottomRef} />
             </div>
 
@@ -267,7 +355,7 @@ export function AdminSupportInbox({
                   rows={3}
                   value={draft}
                   placeholder="Write a reply…"
-                  onChange={(e) => setDraft(e.target.value)}
+                  onChange={(e) => onDraftChange(e.target.value)}
                 />
                 <div className="mt-2 flex justify-end">
                   <Button

@@ -27,6 +27,7 @@ export function useSupportRealtime(
   onEventRef.current = onEvent;
   const lastSinceRef = useRef<string | null>(null);
   const lastMetaRef = useRef<string>("");
+  const lastTypingRef = useRef<string>("");
 
   useEffect(() => {
     if (!join) {
@@ -34,6 +35,7 @@ export function useSupportRealtime(
       setMode("idle");
       lastSinceRef.current = null;
       lastMetaRef.current = "";
+      lastTypingRef.current = "";
       return;
     }
 
@@ -51,6 +53,38 @@ export function useSupportRealtime(
       if (pollTimer) {
         clearInterval(pollTimer);
         pollTimer = null;
+      }
+    };
+
+    const pollTyping = async (conversationId: string, visitorId: string) => {
+      try {
+        const res = await fetch(
+          `/api/v1/support/typing?conversationId=${encodeURIComponent(conversationId)}`
+        );
+        const json = await res.json();
+        if (!json.success || cancelled) return;
+
+        const key = `${json.data.visitorTyping}:${json.data.agentTyping}`;
+        if (key === lastTypingRef.current) return;
+        lastTypingRef.current = key;
+
+        // Emit both sides so UI can decide what to show.
+        emitLocal({
+          type: "typing",
+          conversationId,
+          visitorId,
+          role: "visitor",
+          isTyping: Boolean(json.data.visitorTyping),
+        });
+        emitLocal({
+          type: "typing",
+          conversationId,
+          visitorId,
+          role: "agent",
+          isTyping: Boolean(json.data.agentTyping),
+        });
+      } catch {
+        // ignore
       }
     };
 
@@ -86,6 +120,7 @@ export function useSupportRealtime(
                 guestName: conversation.guestName,
               });
             }
+            await pollTyping(conversation.id, join.visitorId);
           }
 
           const messages = json.data.messages ?? [];
@@ -108,7 +143,7 @@ export function useSupportRealtime(
       };
 
       void tick();
-      pollTimer = setInterval(tick, 2500);
+      pollTimer = setInterval(tick, 2000);
     };
 
     const startAdminPoll = () => {
@@ -135,13 +170,14 @@ export function useSupportRealtime(
             needsEmailForAgent: !json.data.guestEmail,
             messages: json.data.messages,
           });
+          await pollTyping(json.data.id, json.data.visitorId);
         } catch {
           // keep polling
         }
       };
 
       void tick();
-      pollTimer = setInterval(tick, 2500);
+      pollTimer = setInterval(tick, 2000);
     };
 
     const enableFallback = () => {
@@ -150,8 +186,6 @@ export function useSupportRealtime(
       else if (join.visitorId) startPoll();
     };
 
-    // Vercel / most serverless hosts cannot keep Socket.IO alive.
-    // Prefer polling immediately in production browser builds.
     const preferPoll =
       process.env.NEXT_PUBLIC_SUPPORT_FORCE_POLL === "1" ||
       (typeof window !== "undefined" &&
@@ -225,4 +259,18 @@ export function useSupportRealtime(
   }, [join?.visitorId, join?.conversationId, join?.role]);
 
   return { connected, mode };
+}
+
+/** Client helper to publish typing state via API. */
+export async function publishTyping(input: {
+  conversationId: string;
+  role: "visitor" | "agent";
+  isTyping: boolean;
+  visitorId?: string;
+}) {
+  await fetch("/api/v1/support/typing", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
 }
