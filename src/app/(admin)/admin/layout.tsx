@@ -11,24 +11,24 @@ export default async function AdminLayout({
 
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="hidden w-64 shrink-0 border-r border-border bg-surface md:flex md:flex-col">
-        <div className="border-b border-border px-6 py-5">
+      <aside className="hidden w-64 shrink-0 bg-primary md:flex md:flex-col">
+        <div className="border-b border-white/15 px-6 py-5">
           <Link href="/admin" className="block">
-            <span className="font-heading text-lg font-semibold text-heading">
+            <span className="font-heading text-lg font-semibold text-white">
               ROOTORA
             </span>
-            <span className="mt-0.5 block font-button text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <span className="mt-0.5 block font-button text-xs font-medium uppercase tracking-wider text-white/70">
               Admin
             </span>
           </Link>
         </div>
         <div className="flex-1 overflow-y-auto p-4">
-          <AdminNav />
+          <AdminNav variant="sidebar" />
         </div>
-        <div className="border-t border-border p-4">
+        <div className="border-t border-white/15 p-4">
           <Link
             href="/"
-            className="font-button text-sm text-muted-foreground transition-colors hover:text-foreground"
+            className="font-button text-sm text-white/75 transition-colors hover:text-white"
           >
             ← Back to store
           </Link>
@@ -36,12 +36,15 @@ export default async function AdminLayout({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="border-b border-border bg-surface px-6 py-4 md:hidden">
-          <Link href="/admin" className="font-heading text-lg font-semibold text-heading">
+        <header className="border-b border-border bg-white px-6 py-4 md:hidden">
+          <Link
+            href="/admin"
+            className="font-heading text-lg font-semibold text-primary"
+          >
             ROOTORA Admin
           </Link>
           <div className="mt-4">
-            <AdminNav />
+            <AdminNav variant="light" />
           </div>
         </header>
         <main className="flex-1 p-6 md:p-8">{children}</main>

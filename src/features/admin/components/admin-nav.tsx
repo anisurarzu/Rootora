@@ -27,8 +27,14 @@ const navItems = [
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
-export function AdminNav() {
+type AdminNavProps = {
+  /** Desktop green sidebar vs mobile light strip */
+  variant?: "sidebar" | "light";
+};
+
+export function AdminNav({ variant = "sidebar" }: AdminNavProps) {
   const pathname = usePathname();
+  const isSidebar = variant === "sidebar";
 
   return (
     <nav aria-label="Admin navigation">
@@ -44,10 +50,15 @@ export function AdminNav() {
                 href={href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 font-button text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-primary/15 text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  "flex items-center gap-3 rounded-md px-3 py-2.5 font-button text-sm font-medium transition-colors",
+                  isSidebar &&
+                    (isActive
+                      ? "bg-white text-primary shadow-none"
+                      : "text-white/85 hover:bg-white hover:text-primary"),
+                  !isSidebar &&
+                    (isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-primary/10 hover:text-primary")
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
