@@ -9,7 +9,6 @@ import {
   useSyncExternalStore,
 } from "react";
 import { Search, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { POPULAR_SEARCHES } from "@/constants/navigation";
 import {
@@ -118,11 +117,11 @@ export function GlobalSearchBar({
   }
 
   return (
-    <div ref={rootRef} className={cn("relative w-full", className)}>
+    <div ref={rootRef} className={cn("relative w-full min-w-0", className)}>
       <form
         onSubmit={handleSubmit}
         className={cn(
-          "flex w-full overflow-hidden rounded-full bg-white shadow-sm",
+          "flex h-10 w-full min-w-0 items-stretch overflow-hidden rounded-md bg-white shadow-sm sm:h-11",
           focused && "ring-2 ring-white/70"
         )}
         role="search"
@@ -136,7 +135,7 @@ export function GlobalSearchBar({
           onFocus={() => setFocused(true)}
           placeholder={placeholder}
           className={cn(
-            "h-10 min-w-0 flex-1 rounded-none border-0 bg-transparent pl-4 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:h-11 sm:pl-5 sm:text-base",
+            "h-full min-w-0 flex-1 basis-0 rounded-none border-0 bg-transparent px-3 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:px-4 sm:text-base",
             inputClassName
           )}
           aria-label="Search products"
@@ -144,17 +143,17 @@ export function GlobalSearchBar({
           aria-controls="search-suggestions-panel"
           autoComplete="off"
         />
-        <Button
+        <button
           type="submit"
-          variant="ghost"
           className={cn(
-            "h-10 shrink-0 rounded-none border-0 px-4 text-primary hover:bg-transparent hover:text-primary sm:h-11 sm:px-5",
+            "inline-flex h-full w-11 shrink-0 items-center justify-center bg-primary text-primary-foreground transition-colors hover:bg-primary/90 sm:w-12",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/50",
             buttonClassName
           )}
           aria-label="Search"
         >
-          <Search className="h-4 w-4 sm:h-5 sm:w-5" />
-        </Button>
+          <Search className="h-5 w-5 sm:h-5 sm:w-5" strokeWidth={2.25} />
+        </button>
       </form>
 
       {panelOpen ? (
@@ -213,33 +212,6 @@ export function GlobalSearchBar({
           </div>
         </div>
       ) : null}
-    </div>
-  );
-}
-
-export function GlobalSearchOverlay({
-  onClose,
-}: {
-  onClose: () => void;
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Search"
-    >
-      <div className="container-rootora pt-6">
-        <GlobalSearchBar
-          className="mx-auto max-w-2xl"
-          showSuggestions
-        />
-        <div className="mx-auto mt-4 max-w-2xl text-right">
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            Close
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }

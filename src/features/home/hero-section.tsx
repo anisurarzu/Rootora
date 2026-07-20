@@ -123,7 +123,10 @@ export function HeroSection({
 
         {flashSaleProducts.length > 0 ? (
           <div className="mt-2.5 lg:hidden">
-            <FlashSaleSidebar products={flashSaleProducts.slice(0, 4)} />
+            <FlashSaleSidebar
+              products={flashSaleProducts.slice(0, 6)}
+              layout="grid"
+            />
           </div>
         ) : null}
       </div>

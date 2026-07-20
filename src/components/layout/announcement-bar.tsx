@@ -15,7 +15,7 @@ export function AnnouncementBar() {
       role="banner"
       className="relative w-full max-w-[100vw] overflow-hidden border-b border-primary/10 bg-primary/[0.06] text-foreground backdrop-blur-sm dark:bg-primary/10"
     >
-      <div className="container-rootora relative flex items-center justify-center gap-2 py-2 pr-10 text-center sm:gap-2.5 sm:py-2.5 sm:pr-12">
+      <div className="container-rootora relative flex items-center justify-center gap-2 py-1.5 pr-9 text-center sm:gap-2.5 sm:py-2 sm:pr-12">
         <Info
           className="hidden h-3.5 w-3.5 shrink-0 text-primary/80 sm:block"
           aria-hidden

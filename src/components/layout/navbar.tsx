@@ -140,27 +140,28 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Logo + search + icons */}
+        {/* Logo + icons (mobile: search goes on row below) */}
         <nav
-          className="container-rootora flex items-center gap-2 py-2.5 sm:gap-3 sm:py-3"
+          className="container-rootora flex items-center gap-1.5 py-1 sm:gap-2 sm:py-2 md:py-2.5"
           aria-label="Main navigation"
         >
           <Link
             href="/"
             className={cn(
-              "shrink-0 font-heading text-xl font-bold tracking-tight sm:text-2xl",
+              "shrink-0 font-heading text-lg font-bold tracking-tight sm:text-xl md:text-2xl",
               isHome ? "text-primary-foreground" : "text-primary"
             )}
           >
             {siteConfig.name}
           </Link>
 
-          <div className="min-w-0 flex-1 px-1 sm:px-2 lg:px-4">
+          {/* Search inline on md+ only */}
+          <div className="hidden min-w-0 flex-1 md:block">
             <GlobalSearchBar
               className="mx-auto w-full max-w-2xl"
               buttonClassName={
                 isHome
-                  ? "text-primary hover:bg-transparent hover:text-primary"
+                  ? "bg-[#243d28] hover:bg-[#1c3121] text-white"
                   : undefined
               }
             />
@@ -188,7 +189,7 @@ export function Navbar() {
               size="icon"
               asChild
               aria-label={session ? "My account" : "Sign in"}
-              className={iconButtonClass}
+              className={cn("hidden sm:inline-flex", iconButtonClass)}
             >
               <Link href={session ? "/account" : "/login"}>
                 <User className="h-5 w-5" />
@@ -200,7 +201,7 @@ export function Navbar() {
               size="icon"
               asChild
               aria-label="Wishlist"
-              className={iconButtonClass}
+              className={cn("hidden sm:inline-flex", iconButtonClass)}
             >
               <Link href="/wishlist" className="relative">
                 <Heart className="h-5 w-5" />
@@ -224,7 +225,7 @@ export function Navbar() {
               size="icon"
               asChild
               aria-label="Cart"
-              className={iconButtonClass}
+              className={cn("h-9 w-9", iconButtonClass)}
             >
               <Link href="/cart" className="relative">
                 <ShoppingBag className="h-5 w-5" />
@@ -246,7 +247,7 @@ export function Navbar() {
             <Button
               variant="ghost"
               size="icon"
-              className={cn("md:hidden", iconButtonClass)}
+              className={cn("h-9 w-9 md:hidden", iconButtonClass)}
               onClick={() => setMobileOpen(true)}
               aria-label="Open menu"
             >
@@ -254,6 +255,19 @@ export function Navbar() {
             </Button>
           </div>
         </nav>
+
+        {/* Full-width search on mobile */}
+        <div className="container-rootora pb-1.5 pt-0 md:hidden">
+          <GlobalSearchBar
+            className="w-full"
+            placeholder="Search products..."
+            buttonClassName={
+              isHome
+                ? "bg-[#243d28] hover:bg-[#1c3121] text-white"
+                : undefined
+            }
+          />
+        </div>
       </header>
 
       {mobileOpen ? <MobileMenu onClose={() => setMobileOpen(false)} /> : null}

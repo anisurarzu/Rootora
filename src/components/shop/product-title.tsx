@@ -52,8 +52,8 @@ export function ProductTitle({
       {title}{" "}
       <span
         className={cn(
-          "inline-flex translate-y-[-1px] items-center rounded-md bg-primary font-button font-semibold uppercase tracking-wide text-primary-foreground",
-          size === "card" && "mx-0.5 px-1.5 py-0.5 text-[11px] leading-none",
+          "inline-flex translate-y-[-1px] items-center rounded-sm bg-primary font-button font-semibold uppercase tracking-wide text-primary-foreground",
+          size === "card" && "mx-0.5 px-1 py-px text-[9px] leading-none sm:text-[10px]",
           size === "page" && "mx-1 px-2.5 py-1 text-base leading-none md:text-lg"
         )}
       >
