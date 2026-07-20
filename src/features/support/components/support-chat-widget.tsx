@@ -419,7 +419,65 @@ export function SupportChatWidget() {
     }
   };
 
+  const switchToBot = async () => {
+    if (!visitorId || sending) return;
+    setSending(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/v1/support/bot-mode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visitorId }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Could not switch to bot");
+      setStatus(json.data.status);
+      setNeedsEmail(json.data.needsEmailForAgent);
+      setShowEmailForm(false);
+      if (json.data.messages?.length) {
+        setMessages((prev) => mergeMessages(prev, json.data.messages));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not switch to bot");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const requestHuman = async () => {
+    if (!visitorId || sending) return;
+    setSending(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/v1/support/request-human", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visitorId }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || "Could not request agent");
+
+      if (json.data.needsEmail) {
+        setShowEmailForm(true);
+        setNeedsEmail(true);
+      } else {
+        setStatus(json.data.status);
+        setNeedsEmail(false);
+        setShowEmailForm(false);
+        if (json.data.messages?.length) {
+          setMessages((prev) => mergeMessages(prev, json.data.messages));
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not request agent");
+    } finally {
+      setSending(false);
+    }
+  };
+
   const showConnecting = loading && messages.length === 0;
+  const withHuman =
+    status === "WAITING_AGENT" || status === "ACTIVE";
 
   const fab = !open ? (
     <div className="pointer-events-none fixed bottom-5 right-3 z-[91] md:bottom-6 md:right-4">
@@ -612,13 +670,24 @@ export function SupportChatWidget() {
           ) : null}
 
           <div className="shrink-0 border-t border-border bg-white p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-            {needsEmail && !showEmailForm ? (
+            {withHuman ? (
               <button
                 type="button"
-                onClick={() => setShowEmailForm(true)}
-                className="mb-2 w-full rounded-md bg-muted px-2 py-1.5 text-left text-[11px] text-muted-foreground hover:bg-muted/80"
+                onClick={() => void switchToBot()}
+                disabled={sending}
+                className="mb-2 w-full rounded-md bg-muted px-2 py-1.5 text-left text-[11px] text-muted-foreground hover:bg-muted/80 disabled:opacity-60"
               >
-                Talk to a human? Tap here to share your email →
+                Prefer the auto assistant? Tap to chat with bot again →
+              </button>
+            ) : null}
+            {!withHuman ? (
+              <button
+                type="button"
+                onClick={() => void requestHuman()}
+                disabled={sending}
+                className="mb-2 w-full rounded-md bg-muted px-2 py-1.5 text-left text-[11px] text-muted-foreground hover:bg-muted/80 disabled:opacity-60"
+              >
+                Talk to a human? Tap here →
               </button>
             ) : null}
             <form
