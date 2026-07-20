@@ -1,6 +1,9 @@
 import { randomBytes } from "crypto";
 import { PaymentMethod } from "@prisma/client";
-import { z } from "zod";
+import {
+  placeOrderInputSchema,
+  type PlaceOrderInput,
+} from "@/features/checkout/schema";
 import {
   calculateOrderTotals,
   generateOrderNumber,
@@ -8,45 +11,12 @@ import {
 } from "@/lib/checkout";
 import { prisma } from "@/lib/prisma";
 
-export const checkoutItemSchema = z.object({
-  productId: z.string().min(1),
-  quantity: z.number().int().min(1).max(99),
-  variantId: z.string().optional().nullable(),
-});
-
-export const checkoutAddressSchema = z.object({
-  label: z.string().min(1).default("Home"),
-  name: z.string().min(2, "Recipient name is required"),
-  phone: z.string().min(8, "Phone number is required"),
-  addressLine1: z.string().min(3, "Address is required"),
-  addressLine2: z.string().optional(),
-  district: z.string().min(2, "District is required"),
-  postalCode: z.string().min(2, "Postal code is required"),
-});
-
-export const placeOrderInputSchema = z
-  .object({
-    items: z.array(checkoutItemSchema).min(1, "Your cart is empty").optional(),
-    useCart: z.boolean().optional(),
-    addressId: z.string().optional(),
-    newAddress: checkoutAddressSchema.optional(),
-    notes: z.string().max(500).optional(),
-    saveAddress: z.boolean().optional(),
-    guestEmail: z
-      .preprocess(
-        (value) =>
-          typeof value === "string" && value.trim() === ""
-            ? undefined
-            : value,
-        z.string().email("Enter a valid email").optional()
-      ),
-  })
-  .refine((data) => Boolean(data.addressId || data.newAddress), {
-    message: "Please select or add a delivery address",
-    path: ["addressId"],
-  });
-
-export type PlaceOrderInput = z.infer<typeof placeOrderInputSchema>;
+export {
+  checkoutAddressSchema,
+  checkoutItemSchema,
+  placeOrderInputSchema,
+  type PlaceOrderInput,
+} from "@/features/checkout/schema";
 
 export type PlaceOrderServiceResult =
   | {
@@ -224,7 +194,7 @@ export async function placeCodOrder(
             addressLine1: input.newAddress.addressLine1,
             addressLine2: input.newAddress.addressLine2 || null,
             district: input.newAddress.district,
-            postalCode: input.newAddress.postalCode,
+            postalCode: input.newAddress.postalCode?.trim() || "",
             isDefault: shouldBeDefault,
           },
           select: { id: true },

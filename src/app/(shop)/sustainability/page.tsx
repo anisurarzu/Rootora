@@ -46,8 +46,8 @@ export default function SustainabilityPage() {
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
           <div className="relative aspect-[4/3] overflow-hidden rounded-2xl shadow-soft">
             <Image
-              src="/images/organic-banner.png"
-              alt="Organic farming in Bangladesh"
+              src="/images/organic-honey-banner.png"
+              alt="ROOTORA organic forest honey and mustard oil"
               fill
               className="object-cover"
               sizes="(max-width: 1024px) 100vw, 50vw"

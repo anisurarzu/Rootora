@@ -11,10 +11,10 @@ import {
   ShoppingBag,
   Sun,
   User,
-  X,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { GlobalSearchBar } from "@/components/shop/global-search-bar";
+import { MobileMenu } from "@/components/layout/mobile-menu";
 import { Button } from "@/components/ui/button";
 import { NAV_ITEMS } from "@/constants/navigation";
 import { useCartStore } from "@/features/cart/store/cart-store";
@@ -189,7 +189,7 @@ export function Navbar() {
               size="icon"
               asChild
               aria-label={session ? "My account" : "Sign in"}
-              className={cn("hidden sm:inline-flex", iconButtonClass)}
+              className={cn("h-9 w-9", iconButtonClass)}
             >
               <Link href={session ? "/account" : "/login"}>
                 <User className="h-5 w-5" />
@@ -270,60 +270,12 @@ export function Navbar() {
         </div>
       </header>
 
-      {mobileOpen ? <MobileMenu onClose={() => setMobileOpen(false)} /> : null}
+      <MobileMenu
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        cartCount={mounted ? cartCount : 0}
+        wishlistCount={mounted ? wishlistCount : 0}
+      />
     </>
-  );
-}
-
-function MobileMenu({ onClose }: { onClose: () => void }) {
-  return (
-    <div
-      className="fixed inset-0 z-[60] bg-background md:hidden"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Mobile menu"
-    >
-      <div className="flex items-center justify-between border-b border-border p-4">
-        <span className="font-heading text-xl font-bold text-primary">
-          {siteConfig.name}
-        </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          aria-label="Close menu"
-        >
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
-
-      <nav className="overflow-y-auto p-4">
-        {NAV_ITEMS.map((item) => (
-          <div key={item.href} className="border-b border-border py-3">
-            <Link
-              href={item.href}
-              onClick={onClose}
-              className="font-button text-lg font-medium text-heading"
-            >
-              {item.label}
-            </Link>
-            {item.children ? (
-              <div className="mt-2 space-y-1 pl-4">
-                {item.children.map((child) => (
-                  <Link
-                    key={child.href}
-                    href={child.href}
-                    onClick={onClose}
-                    className="block py-1.5 text-sm text-muted-foreground hover:text-primary"
-                  >
-                    {child.label}
-                  </Link>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        ))}
-      </nav>
-    </div>
   );
 }

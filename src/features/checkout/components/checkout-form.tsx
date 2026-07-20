@@ -9,9 +9,22 @@ import { Banknote, MapPin, Plus, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { placeCodOrder } from "@/features/checkout/actions";
+import {
+  ADDRESS_LABEL_OPTIONS,
+  checkoutAddressSchema,
+  mapZodErrors,
+  type AddressLabelOption,
+} from "@/features/checkout/schema";
 import { useCartStore } from "@/features/cart/store/cart-store";
 import {
   FREE_SHIPPING_THRESHOLD,
@@ -39,6 +52,27 @@ type CheckoutFormProps = {
   isGuest?: boolean;
 };
 
+type FieldErrors = Record<string, string>;
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return (
+    <p className="text-xs text-destructive" role="alert">
+      {message}
+    </p>
+  );
+}
+
+function resolveAddressLabel(
+  labelType: AddressLabelOption,
+  customLabel: string
+) {
+  if (labelType === "Other") {
+    return customLabel.trim();
+  }
+  return labelType;
+}
+
 export function CheckoutForm({
   addresses,
   defaultName,
@@ -61,8 +95,10 @@ export function CheckoutForm({
   const [saveAddress, setSaveAddress] = useState(!isGuest);
   const [notes, setNotes] = useState("");
   const [guestEmail, setGuestEmail] = useState(defaultEmail);
+  const [labelType, setLabelType] = useState<AddressLabelOption>("Home");
+  const [customLabel, setCustomLabel] = useState("");
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [newAddress, setNewAddress] = useState({
-    label: "Home",
     name: defaultName,
     phone: defaultPhone,
     addressLine1: "",
@@ -73,6 +109,54 @@ export function CheckoutForm({
 
   const subtotal = getSubtotal();
   const totals = useMemo(() => calculateOrderTotals(subtotal), [subtotal]);
+
+  const clearError = (field: string) => {
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const validateForm = () => {
+    const nextErrors: FieldErrors = {};
+
+    if (!useNewAddress && !isGuest && addresses.length > 0) {
+      if (!selectedAddressId) {
+        nextErrors.addressId = "Please select a delivery address";
+      }
+      setErrors(nextErrors);
+      return Object.keys(nextErrors).length === 0;
+    }
+
+    const label = resolveAddressLabel(labelType, customLabel);
+    if (labelType === "Other" && !customLabel.trim()) {
+      nextErrors.customLabel = "Please enter a label for this address";
+    }
+
+    const parsed = checkoutAddressSchema.safeParse({
+      label,
+      name: newAddress.name,
+      phone: newAddress.phone,
+      addressLine1: newAddress.addressLine1,
+      addressLine2: newAddress.addressLine2 || undefined,
+      district: newAddress.district,
+      postalCode: newAddress.postalCode.trim() || undefined,
+    });
+
+    if (!parsed.success) {
+      Object.assign(nextErrors, mapZodErrors(parsed.error));
+    }
+
+    const trimmedGuestEmail = guestEmail.trim();
+    if (trimmedGuestEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedGuestEmail)) {
+      nextErrors.guestEmail = "Enter a valid email address";
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
 
   if (items.length === 0) {
     return (
@@ -92,7 +176,13 @@ export function CheckoutForm({
   }
 
   function onPlaceOrder() {
+    if (!validateForm()) {
+      toast.error("Please fix the highlighted fields before placing your order.");
+      return;
+    }
+
     startTransition(async () => {
+      const label = resolveAddressLabel(labelType, customLabel);
       const payload = {
         items: items.map((item) => ({
           productId: item.product.id,
@@ -103,7 +193,17 @@ export function CheckoutForm({
         saveAddress: isGuest ? false : saveAddress,
         guestEmail: guestEmail.trim() || undefined,
         ...(useNewAddress || isGuest
-          ? { newAddress }
+          ? {
+              newAddress: {
+                label,
+                name: newAddress.name.trim(),
+                phone: newAddress.phone.trim(),
+                addressLine1: newAddress.addressLine1.trim(),
+                addressLine2: newAddress.addressLine2.trim() || undefined,
+                district: newAddress.district.trim(),
+                postalCode: newAddress.postalCode.trim() || undefined,
+              },
+            }
           : { addressId: selectedAddressId }),
       };
 
@@ -123,6 +223,9 @@ export function CheckoutForm({
       router.refresh();
     });
   }
+
+  const inputErrorClass = (field: string) =>
+    cn(errors[field] && "border-destructive focus-visible:ring-destructive");
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
@@ -144,7 +247,10 @@ export function CheckoutForm({
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={() => setUseNewAddress((prev) => !prev)}
+                onClick={() => {
+                  setUseNewAddress((prev) => !prev);
+                  setErrors({});
+                }}
               >
                 <Plus className="h-4 w-4" />
                 {useNewAddress ? "Use saved" : "New address"}
@@ -153,95 +259,186 @@ export function CheckoutForm({
           </div>
 
           {!useNewAddress && !isGuest && addresses.length > 0 ? (
-            <ul className="mt-5 space-y-3">
-              {addresses.map((address) => (
-                <li key={address.id}>
-                  <label
-                    className={cn(
-                      "flex cursor-pointer gap-3 rounded-xl border p-4 transition-colors",
-                      selectedAddressId === address.id
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:bg-muted/30"
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name="address"
-                      className="mt-1"
-                      checked={selectedAddressId === address.id}
-                      onChange={() => setSelectedAddressId(address.id)}
-                    />
-                    <span>
-                      <span className="flex items-center gap-2 font-button text-sm font-medium text-heading">
-                        <MapPin className="h-4 w-4 text-primary" />
-                        {address.label}
-                        {address.isDefault ? (
-                          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                            Default
-                          </span>
-                        ) : null}
+            <>
+              <ul className="mt-5 space-y-3">
+                {addresses.map((address) => (
+                  <li key={address.id}>
+                    <label
+                      className={cn(
+                        "flex cursor-pointer gap-3 rounded-xl border p-4 transition-colors",
+                        selectedAddressId === address.id
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:bg-muted/30",
+                        errors.addressId && selectedAddressId !== address.id
+                          ? "border-destructive/40"
+                          : null
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="address"
+                        className="mt-1"
+                        checked={selectedAddressId === address.id}
+                        onChange={() => {
+                          setSelectedAddressId(address.id);
+                          clearError("addressId");
+                        }}
+                      />
+                      <span>
+                        <span className="flex items-center gap-2 font-button text-sm font-medium text-heading">
+                          <MapPin className="h-4 w-4 text-primary" />
+                          {address.label}
+                          {address.isDefault ? (
+                            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                              Default
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="mt-1 block text-sm text-muted-foreground">
+                          {address.name} · {address.phone}
+                        </span>
+                        <span className="mt-1 block text-sm text-muted-foreground">
+                          {address.addressLine1}
+                          {address.addressLine2
+                            ? `, ${address.addressLine2}`
+                            : ""}
+                          , {address.district}
+                          {address.postalCode ? ` ${address.postalCode}` : ""}
+                        </span>
                       </span>
-                      <span className="mt-1 block text-sm text-muted-foreground">
-                        {address.name} · {address.phone}
-                      </span>
-                      <span className="mt-1 block text-sm text-muted-foreground">
-                        {address.addressLine1}
-                        {address.addressLine2
-                          ? `, ${address.addressLine2}`
-                          : ""}
-                        , {address.district} {address.postalCode}
-                      </span>
-                    </span>
-                  </label>
-                </li>
-              ))}
-            </ul>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+              <FieldError message={errors.addressId} />
+            </>
           ) : (
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              {(
-                [
-                  ["label", "Label", "Home"],
-                  ["name", "Full name", "Recipient name"],
-                  ["phone", "Phone", "+8801..."],
-                  ["district", "District", "Dhaka"],
-                  ["postalCode", "Postal code", "1205"],
-                ] as const
-              ).map(([key, label, placeholder]) => (
-                <div key={key} className="space-y-2">
-                  <Label htmlFor={key}>{label}</Label>
-                  <Input
-                    id={key}
-                    value={newAddress[key]}
-                    placeholder={placeholder}
-                    onChange={(event) =>
-                      setNewAddress((prev) => ({
-                        ...prev,
-                        [key]: event.target.value,
-                      }))
-                    }
-                  />
-                </div>
-              ))}
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="addressLine1">Address line 1</Label>
+                <Label htmlFor="addressType">
+                  Address type <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={labelType}
+                  onValueChange={(value) => {
+                    setLabelType(value as AddressLabelOption);
+                    clearError("label");
+                    clearError("customLabel");
+                  }}
+                >
+                  <SelectTrigger
+                    id="addressType"
+                    className={inputErrorClass("label")}
+                    aria-invalid={Boolean(errors.label)}
+                  >
+                    <SelectValue placeholder="Select address type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ADDRESS_LABEL_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FieldError message={errors.label} />
+              </div>
+
+              {labelType === "Other" ? (
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="customLabel">
+                    Custom label <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="customLabel"
+                    value={customLabel}
+                    placeholder="e.g. Parent's house, Warehouse"
+                    className={inputErrorClass("customLabel")}
+                    aria-invalid={Boolean(errors.customLabel)}
+                    onChange={(event) => {
+                      setCustomLabel(event.target.value);
+                      clearError("customLabel");
+                      clearError("label");
+                    }}
+                  />
+                  <FieldError message={errors.customLabel} />
+                </div>
+              ) : null}
+
+              <div className="space-y-2">
+                <Label htmlFor="name">
+                  Full name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="name"
+                  value={newAddress.name}
+                  placeholder="Recipient name"
+                  autoComplete="name"
+                  className={inputErrorClass("name")}
+                  aria-invalid={Boolean(errors.name)}
+                  onChange={(event) => {
+                    setNewAddress((prev) => ({
+                      ...prev,
+                      name: event.target.value,
+                    }));
+                    clearError("name");
+                  }}
+                />
+                <FieldError message={errors.name} />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">
+                  Phone <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={newAddress.phone}
+                  placeholder="+8801..."
+                  autoComplete="tel"
+                  className={inputErrorClass("phone")}
+                  aria-invalid={Boolean(errors.phone)}
+                  onChange={(event) => {
+                    setNewAddress((prev) => ({
+                      ...prev,
+                      phone: event.target.value,
+                    }));
+                    clearError("phone");
+                  }}
+                />
+                <FieldError message={errors.phone} />
+              </div>
+
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="addressLine1">
+                  Address line 1 <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="addressLine1"
                   value={newAddress.addressLine1}
                   placeholder="House, road, area"
-                  onChange={(event) =>
+                  autoComplete="address-line1"
+                  className={inputErrorClass("addressLine1")}
+                  aria-invalid={Boolean(errors.addressLine1)}
+                  onChange={(event) => {
                     setNewAddress((prev) => ({
                       ...prev,
                       addressLine1: event.target.value,
-                    }))
-                  }
+                    }));
+                    clearError("addressLine1");
+                  }}
                 />
+                <FieldError message={errors.addressLine1} />
               </div>
+
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="addressLine2">Address line 2 (optional)</Label>
                 <Input
                   id="addressLine2"
                   value={newAddress.addressLine2}
-                  placeholder="Landmark"
+                  placeholder="Landmark, floor, etc."
+                  autoComplete="address-line2"
                   onChange={(event) =>
                     setNewAddress((prev) => ({
                       ...prev,
@@ -250,6 +447,45 @@ export function CheckoutForm({
                   }
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="district">
+                  District <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="district"
+                  value={newAddress.district}
+                  placeholder="Dhaka"
+                  autoComplete="address-level2"
+                  className={inputErrorClass("district")}
+                  aria-invalid={Boolean(errors.district)}
+                  onChange={(event) => {
+                    setNewAddress((prev) => ({
+                      ...prev,
+                      district: event.target.value,
+                    }));
+                    clearError("district");
+                  }}
+                />
+                <FieldError message={errors.district} />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="postalCode">Postal code (optional)</Label>
+                <Input
+                  id="postalCode"
+                  value={newAddress.postalCode}
+                  placeholder="1205"
+                  autoComplete="postal-code"
+                  onChange={(event) =>
+                    setNewAddress((prev) => ({
+                      ...prev,
+                      postalCode: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+
               {isGuest ? (
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="guestEmail">Email (optional)</Label>
@@ -258,8 +494,14 @@ export function CheckoutForm({
                     type="email"
                     value={guestEmail}
                     placeholder="you@example.com"
-                    onChange={(event) => setGuestEmail(event.target.value)}
+                    className={inputErrorClass("guestEmail")}
+                    aria-invalid={Boolean(errors.guestEmail)}
+                    onChange={(event) => {
+                      setGuestEmail(event.target.value);
+                      clearError("guestEmail");
+                    }}
                   />
+                  <FieldError message={errors.guestEmail} />
                   <p className="text-xs text-muted-foreground">
                     Used for order updates. Keep your invoice link to download
                     the receipt later.

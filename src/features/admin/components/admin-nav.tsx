@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   FolderTree,
   LayoutDashboard,
+  MessageCircle,
   Package,
   PanelTop,
   Settings,
@@ -19,6 +20,7 @@ const navItems = [
   { href: "/admin/homepage", label: "Homepage", icon: PanelTop },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
+  { href: "/admin/support", label: "Support", icon: MessageCircle },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/categories", label: "Categories", icon: FolderTree },
   { href: "/admin/farmers", label: "Farmers", icon: Sprout },

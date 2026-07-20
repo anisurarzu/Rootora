@@ -51,12 +51,12 @@ export function HeroSection({
   return (
     <section aria-label={`${content.brandName} hero`} className="bg-[#eef1ea]">
       <div
-        className="container-rootora py-2.5 sm:py-3"
+        className="container-rootora pt-[0.5px] pb-2.5 sm:pb-3"
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
       >
         <div className="grid gap-2.5 lg:grid-cols-12 lg:gap-3">
-          <div className="relative overflow-hidden rounded-lg bg-white shadow-soft lg:col-span-9">
+          <div className="relative overflow-hidden bg-white shadow-soft lg:col-span-9">
             <div className="relative aspect-[16/7] overflow-hidden sm:aspect-[16/6] lg:aspect-[16/5.5]">
               <motion.div
                 className="flex h-full"

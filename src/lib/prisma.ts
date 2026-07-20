@@ -6,7 +6,7 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 /** Bump when Prisma schema shape changes so hot reload drops stale clients. */
-const PRISMA_SCHEMA_VERSION = 12;
+const PRISMA_SCHEMA_VERSION = 13;
 
 function createPrismaClient() {
   return new PrismaClient({
@@ -52,6 +52,8 @@ function isCurrentClient(client: PrismaClient) {
     hasModel(client, "heroSettings") &&
     hasModel(client, "heroSlide") &&
     hasModel(client, "orderStatusEvent") &&
+    hasModel(client, "supportConversation") &&
+    hasModel(client, "supportMessage") &&
     orderHasStatusCode(client) &&
     globalForPrisma.prismaSchemaVersion === PRISMA_SCHEMA_VERSION
   );

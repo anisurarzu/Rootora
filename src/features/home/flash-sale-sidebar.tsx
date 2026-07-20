@@ -24,7 +24,7 @@ export function FlashSaleSidebar({
   return (
     <div
       className={cn(
-        "flex flex-col overflow-hidden rounded-lg border border-border/70 bg-white shadow-soft",
+        "flex flex-col overflow-hidden border border-border/70 bg-white shadow-soft",
         isGrid ? "" : "h-full",
         className
       )}

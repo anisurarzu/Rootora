@@ -59,7 +59,9 @@ model User {
   addresses     Address[]
   wishlist      WishlistItem[]
   cart          CartItem[]
-  notifications Notification[]
+  notifications       Notification[]
+  supportMessages     SupportMessage[]     @relation("SupportAgentMessages")
+  supportConversations SupportConversation[] @relation("SupportAssignedAgent")
 
   @@index([role])
   @@map("user")
@@ -527,4 +529,54 @@ model HeroSlide {
 
   @@index([heroId, sortOrder])
   @@map("hero_slides")
+}
+
+enum SupportConversationStatus {
+  BOT
+  WAITING_AGENT
+  ACTIVE
+  CLOSED
+}
+
+enum SupportMessageSender {
+  VISITOR
+  BOT
+  AGENT
+}
+
+/// Customer support chat conversation (guest or logged-in).
+model SupportConversation {
+  id              String                     @id @default(cuid())
+  visitorId       String
+  guestEmail      String?
+  guestName       String?
+  userId          String?
+  status          SupportConversationStatus  @default(BOT)
+  assignedAgentId String?
+  assignedAgent   User?                      @relation("SupportAssignedAgent", fields: [assignedAgentId], references: [id], onDelete: SetNull)
+  lastMessageAt   DateTime                   @default(now())
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+  messages        SupportMessage[]
+
+  @@index([visitorId])
+  @@index([guestEmail])
+  @@index([status, lastMessageAt])
+  @@index([assignedAgentId])
+  @@map("support_conversations")
+}
+
+model SupportMessage {
+  id             String               @id @default(cuid())
+  conversationId String
+  conversation   SupportConversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         SupportMessageSender
+  body           String               @db.Text
+  agentUserId    String?
+  agentUser      User?                @relation("SupportAgentMessages", fields: [agentUserId], references: [id], onDelete: SetNull)
+  createdAt      DateTime             @default(now())
+
+  @@index([conversationId, createdAt])
+  @@index([agentUserId])
+  @@map("support_messages")
 }

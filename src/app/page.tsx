@@ -1,18 +1,17 @@
 import { MainLayout } from "@/components/layout/main-layout";
-import { FeaturedBlogs } from "@/features/home/featured-blogs";
 import { FeaturedCategories } from "@/features/home/featured-categories";
-import { FarmerStories } from "@/features/home/farmer-stories";
 import { getHeroContent } from "@/features/home/hero";
 import { HeroSection } from "@/features/home/hero-section";
 import { InstagramGallery } from "@/features/home/instagram-gallery";
 import { NewsletterSection } from "@/features/home/newsletter-section";
 import { OrganicCollectionBanner } from "@/features/home/organic-collection-banner";
 import { ProductShowcase } from "@/features/home/product-showcase";
-import { RecipeSection } from "@/features/home/recipe-section";
+import { PromoStripBanner } from "@/features/home/promo-strip-banner";
 import { Testimonials } from "@/features/home/testimonials";
 import { TraditionalClothing } from "@/features/home/traditional-clothing";
 import {
   getStorefrontCategories,
+  getStorefrontProducts,
   getStorefrontProductsByFlag,
   getStorefrontSaleProducts,
 } from "@/features/products/storefront-queries";
@@ -26,6 +25,7 @@ export default async function HomePage() {
     categories,
     seasonalProducts,
     bestSellers,
+    allProducts,
     organicProducts,
     flashSaleProducts,
   ] = await Promise.all([
@@ -33,6 +33,7 @@ export default async function HomePage() {
     getStorefrontCategories({ onlyWithProducts: true }),
     getStorefrontProductsByFlag("seasonal"),
     getStorefrontProductsByFlag("bestSeller"),
+    getStorefrontProducts(),
     getStorefrontProductsByFlag("organic", 4),
     getStorefrontSaleProducts(6),
   ]);
@@ -71,6 +72,19 @@ export default async function HomePage() {
         />
       )}
 
+      <PromoStripBanner />
+
+      {allProducts.length > 0 && (
+        <ProductShowcase
+          id="all-products"
+          eyebrow="Shop"
+          title="Just For You"
+          products={allProducts}
+          viewAllHref="/shop"
+          compact
+        />
+      )}
+
       {seasonalProducts.length > 0 && (
         <ProductShowcase
           id="seasonal"
@@ -89,16 +103,13 @@ export default async function HomePage() {
           id="organic"
           eyebrow="Organic"
           title="Organic Collection"
-          description="Certified organic products from trusted Bangladeshi farms."
+          description="Pure forest honey and cold-pressed mustard oil from trusted Bangladeshi farms."
           products={organicProducts}
           viewAllHref="/collections/organic"
         />
       )}
 
       <TraditionalClothing />
-      <FarmerStories />
-      <RecipeSection />
-      <FeaturedBlogs />
       <Testimonials />
       <NewsletterSection />
       <InstagramGallery />

@@ -21,7 +21,7 @@ const collectionMeta: Record<
     eyebrow: "Organic",
     title: "Organic Collection",
     description:
-      "Certified organic products from Bangladeshi farms — free from synthetic pesticides and GMOs.",
+      "Pure forest honey and traditional mustard oil — certified organic, unprocessed, and sourced directly from Bangladeshi farms.",
   },
   seasonal: {
     eyebrow: "Seasonal",

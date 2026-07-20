@@ -31,12 +31,12 @@ export default async function CheckoutPage() {
 
   return (
     <MainLayout>
-      <div className="container-rootora section-padding">
+      <div className="container-rootora pb-12 pt-6 md:pb-16 md:pt-8">
         <SectionHeading
           eyebrow="Checkout"
           title="Complete your order"
-          description="Review your items and place a Cash on Delivery order. Login is optional."
           align="left"
+          className="mb-5 md:mb-6"
         />
 
         {!session?.user ? (

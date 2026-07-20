@@ -30,8 +30,8 @@ export function OrganicCollectionBanner() {
                 The Organic Collection
               </h2>
               <p className="mt-4 max-w-md text-base leading-relaxed text-primary-foreground/80">
-                Every product in our organic collection is certified, traceable,
-                and sourced from farmers who prioritize soil health and biodiversity.
+                Pure forest honey and cold-pressed mustard oil — certified organic,
+                traceable, and sourced from trusted Bangladeshi farms.
               </p>
 
               <Button
@@ -55,8 +55,8 @@ export function OrganicCollectionBanner() {
               className="relative aspect-[4/3] lg:aspect-auto lg:min-h-[400px]"
             >
               <Image
-                src="/images/organic-banner.png"
-                alt="Organic produce collection"
+                src="/images/organic-honey-banner.png"
+                alt="ROOTORA organic forest honey and traditional mustard oil"
                 fill
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 50vw"

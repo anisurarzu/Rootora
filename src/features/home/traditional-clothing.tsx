@@ -20,8 +20,8 @@ export function TraditionalClothing() {
             className="relative aspect-[4/5] overflow-hidden rounded-2xl shadow-lift"
           >
             <Image
-              src="/images/traditional-clothing.png"
-              alt="Traditional Bangladeshi handloom clothing"
+              src="/images/traditional-clothing-v2.png"
+              alt="Traditional Bangladeshi panjabi and Jamdani saree collection"
               fill
               className="object-cover"
               sizes="(max-width: 1024px) 100vw, 50vw"
@@ -37,14 +37,14 @@ export function TraditionalClothing() {
             <SectionHeading
               eyebrow="Heritage"
               title="Traditional Clothing"
-              description="Handwoven Jamdani, muslin, and artisan textiles — preserving centuries of Bangladeshi craftsmanship for the modern wardrobe."
+              description="Premium panjabi, Jamdani sarees, and artisan textiles — preserving centuries of Bangladeshi craftsmanship for the modern wardrobe."
               align="left"
             />
 
             <ul className="mt-6 space-y-3 text-muted-foreground">
               {[
-                "Master weavers from Narayanganj & Comilla",
-                "UNESCO recognized Jamdani techniques",
+                "Premium white & black panjabi",
+                "Handwoven Jamdani sarees",
                 "Sustainable, natural dyes & fibers",
                 "Each piece uniquely handcrafted",
               ].map((item) => (

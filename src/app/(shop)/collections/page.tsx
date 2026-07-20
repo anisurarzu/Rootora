@@ -17,8 +17,8 @@ const collections = [
     slug: "organic",
     title: "Organic Collection",
     description:
-      "Certified organic foods, grains, and produce sourced from pesticide-free Bangladeshi farms.",
-    image: "/images/categories/organic-foods.png",
+      "Certified organic forest honey and cold-pressed mustard oil — pure, traceable staples from Bangladeshi farms.",
+    image: "/images/categories/organic-honey.png",
   },
   {
     slug: "seasonal",
@@ -46,7 +46,7 @@ const collections = [
     title: "Traditional Clothing",
     description:
       "Handloom Jamdani sarees and artisan textiles — UNESCO-recognized heritage craftsmanship.",
-    image: "/images/traditional-clothing.png",
+    image: "/images/traditional-clothing-v2.png",
   },
   {
     slug: "handmade",
