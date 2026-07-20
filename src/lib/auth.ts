@@ -58,6 +58,9 @@ export const auth = betterAuth({
   trustedOrigins: [
     process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
     process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+    "https://shoprootora.com",
+    "https://www.shoprootora.com",
+    "http://localhost:3000",
     process.env.MOBILE_CORS_ORIGIN,
   ].filter(Boolean) as string[],
 });
