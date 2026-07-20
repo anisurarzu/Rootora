@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MessageCircle, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +50,7 @@ export function SupportChatWidget() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const bootstrappedRef = useRef(false);
 
   useEffect(() => {
     setVisitorId(getVisitorId());
@@ -63,10 +64,13 @@ export function SupportChatWidget() {
     scrollToBottom();
   }, [messages, open, scrollToBottom]);
 
-  const bootstrap = useCallback(async () => {
+  const bootstrap = useCallback(async (opts?: { silent?: boolean }) => {
     if (!visitorId) return;
-    setLoading(true);
-    setError(null);
+    const silent = Boolean(opts?.silent);
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const res = await fetch(
         `/api/v1/support/conversations?visitorId=${encodeURIComponent(visitorId)}`
@@ -77,41 +81,50 @@ export function SupportChatWidget() {
       setMessages(json.data.messages);
       setStatus(json.data.status);
       setNeedsEmail(json.data.needsEmailForAgent);
+      bootstrappedRef.current = true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not start chat");
+      if (!silent) {
+        setError(err instanceof Error ? err.message : "Could not start chat");
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [visitorId]);
 
   useEffect(() => {
-    if (open && visitorId) {
+    if (open && visitorId && !bootstrappedRef.current) {
       void bootstrap();
+    }
+    if (!open) {
+      bootstrappedRef.current = false;
     }
   }, [open, visitorId, bootstrap]);
 
-  useSupportRealtime(
-    open && visitorId
-      ? { visitorId, conversationId: conversationId ?? undefined, role: "visitor" }
-      : null,
-    (event) => {
-      if (event.visitorId !== visitorId) return;
-
-      if (event.type === "message") {
-        setConversationId(event.conversationId);
-        setStatus(event.status);
-        setNeedsEmail(event.needsEmailForAgent);
-        setMessages((prev) => mergeMessages(prev, event.messages));
-      }
-
-      if (event.type === "conversation:update") {
-        setConversationId(event.conversationId);
-        setStatus(event.status);
-        setNeedsEmail(false);
-        void bootstrap();
-      }
-    }
+  const realtimeJoin = useMemo(
+    () =>
+      open && visitorId
+        ? { visitorId, role: "visitor" as const }
+        : null,
+    [open, visitorId]
   );
+
+  useSupportRealtime(realtimeJoin, (event) => {
+    if (event.visitorId !== visitorId) return;
+
+    if (event.type === "message") {
+      if (event.conversationId) setConversationId(event.conversationId);
+      setStatus(event.status);
+      setNeedsEmail(event.needsEmailForAgent);
+      setMessages((prev) => mergeMessages(prev, event.messages));
+      return;
+    }
+
+    if (event.type === "conversation:update") {
+      if (event.conversationId) setConversationId(event.conversationId);
+      setStatus(event.status);
+      setNeedsEmail(!event.guestEmail);
+    }
+  });
 
   const sendMessage = async () => {
     const body = draft.trim();
@@ -168,13 +181,15 @@ export function SupportChatWidget() {
       setNeedsEmail(false);
       setShowEmailForm(false);
       setStatus(json.data.status);
-      await bootstrap();
+      await bootstrap({ silent: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save email");
     } finally {
       setSending(false);
     }
   };
+
+  const showConnecting = loading && messages.length === 0;
 
   return (
     <div className="pointer-events-none fixed bottom-4 right-4 z-[90] flex flex-col items-end gap-3 md:bottom-6 md:right-6">
@@ -185,11 +200,11 @@ export function SupportChatWidget() {
               <p className="font-button text-sm font-semibold">ROOTORA Support</p>
               <p className="text-[11px] text-primary-foreground/80">
                 {status === "BOT"
-                  ? "Auto assistant · live"
+                  ? "Auto assistant online"
                   : status === "WAITING_AGENT"
                     ? "Waiting for an agent…"
                     : status === "ACTIVE"
-                      ? "Agent connected · live"
+                      ? "Agent connected"
                       : "Chat"}
               </p>
             </div>
@@ -206,7 +221,7 @@ export function SupportChatWidget() {
           </div>
 
           <div className="flex-1 space-y-2.5 overflow-y-auto bg-muted/20 p-3">
-            {loading ? (
+            {showConnecting ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
                 Connecting…
               </p>

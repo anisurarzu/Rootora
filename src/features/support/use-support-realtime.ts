@@ -15,8 +15,7 @@ type Mode = "socket" | "poll" | "idle";
 
 /**
  * Prefer Socket.IO when available (custom Node server).
- * On Vercel / serverless, automatically falls back to HTTP polling so chat
- * stays fully workable in production without a persistent WebSocket host.
+ * On Vercel / serverless, falls back to HTTP polling.
  */
 export function useSupportRealtime(
   join: JoinPayload | null,
@@ -27,11 +26,14 @@ export function useSupportRealtime(
   const onEventRef = useRef(onEvent);
   onEventRef.current = onEvent;
   const lastSinceRef = useRef<string | null>(null);
+  const lastMetaRef = useRef<string>("");
 
   useEffect(() => {
     if (!join) {
       setConnected(false);
       setMode("idle");
+      lastSinceRef.current = null;
+      lastMetaRef.current = "";
       return;
     }
 
@@ -70,15 +72,20 @@ export function useSupportRealtime(
           const json = await res.json();
           if (!json.success || cancelled) return;
 
-          if (json.data.conversation) {
-            emitLocal({
-              type: "conversation:update",
-              conversationId: json.data.conversation.id,
-              visitorId: join.visitorId,
-              status: json.data.conversation.status,
-              guestEmail: json.data.conversation.guestEmail,
-              guestName: json.data.conversation.guestName,
-            });
+          const conversation = json.data.conversation;
+          if (conversation) {
+            const metaKey = `${conversation.id}:${conversation.status}:${conversation.guestEmail ?? ""}`;
+            if (metaKey !== lastMetaRef.current) {
+              lastMetaRef.current = metaKey;
+              emitLocal({
+                type: "conversation:update",
+                conversationId: conversation.id,
+                visitorId: join.visitorId,
+                status: conversation.status,
+                guestEmail: conversation.guestEmail,
+                guestName: conversation.guestName,
+              });
+            }
           }
 
           const messages = json.data.messages ?? [];
@@ -88,11 +95,10 @@ export function useSupportRealtime(
             emitLocal({
               type: "message",
               conversationId:
-                json.data.conversation?.id ?? join.conversationId ?? "",
+                conversation?.id ?? join.conversationId ?? "",
               visitorId: join.visitorId,
-              status: json.data.conversation?.status ?? "BOT",
-              needsEmailForAgent:
-                json.data.conversation?.needsEmailForAgent ?? true,
+              status: conversation?.status ?? "BOT",
+              needsEmailForAgent: conversation?.needsEmailForAgent ?? true,
               messages,
             });
           }
@@ -102,10 +108,9 @@ export function useSupportRealtime(
       };
 
       void tick();
-      pollTimer = setInterval(tick, 2000);
+      pollTimer = setInterval(tick, 2500);
     };
 
-    // Admin: soft refresh via conversation poll endpoint
     const startAdminPoll = () => {
       if (cancelled || usingPoll) return;
       usingPoll = true;
@@ -145,14 +150,29 @@ export function useSupportRealtime(
       else if (join.visitorId) startPoll();
     };
 
+    // Vercel / most serverless hosts cannot keep Socket.IO alive.
+    // Prefer polling immediately in production browser builds.
+    const preferPoll =
+      process.env.NEXT_PUBLIC_SUPPORT_FORCE_POLL === "1" ||
+      (typeof window !== "undefined" &&
+        window.location.hostname !== "localhost" &&
+        window.location.hostname !== "127.0.0.1");
+
+    if (preferPoll) {
+      enableFallback();
+      return () => {
+        cancelled = true;
+        stopPoll();
+      };
+    }
+
     try {
       socket = io({
         path: SUPPORT_SOCKET_PATH,
         transports: ["websocket", "polling"],
         autoConnect: true,
-        timeout: 2500,
-        reconnectionAttempts: 2,
-        reconnectionDelay: 800,
+        timeout: 2000,
+        reconnection: false,
       });
 
       socket.on("connect", () => {
@@ -184,12 +204,11 @@ export function useSupportRealtime(
         emitLocal(event);
       });
 
-      // If Socket.IO is unavailable (Vercel), fall back quickly.
       socketTimeout = setTimeout(() => {
         if (!cancelled && !socket?.connected) {
           enableFallback();
         }
-      }, 1800);
+      }, 1500);
     } catch {
       enableFallback();
     }
