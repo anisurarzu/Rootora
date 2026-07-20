@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { MessageCircle, Send, X } from "lucide-react";
+import { Headset, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TypingDots } from "@/features/support/components/typing-dots";
@@ -25,6 +25,43 @@ function getVisitorId() {
     localStorage.setItem(VISITOR_KEY, id);
   }
   return id;
+}
+
+function readKey(visitorId: string) {
+  return `rootora_support_last_read_${visitorId}`;
+}
+
+function getLastReadAt(visitorId: string) {
+  if (typeof window === "undefined" || !visitorId) return "";
+  const key = readKey(visitorId);
+  let value = localStorage.getItem(key);
+  if (!value) {
+    value = new Date().toISOString();
+    localStorage.setItem(key, value);
+  }
+  return value;
+}
+
+function setLastReadAt(visitorId: string, iso: string) {
+  if (typeof window === "undefined" || !visitorId) return;
+  localStorage.setItem(readKey(visitorId), iso);
+}
+
+function countUnread(
+  messages: SupportChatMessage[],
+  lastReadAt: string
+): number {
+  return messages.filter(
+    (m) =>
+      m.sender === "AGENT" &&
+      (!lastReadAt || m.createdAt > lastReadAt)
+  ).length;
+}
+
+function latestMessageAt(messages: SupportChatMessage[]) {
+  return messages.reduce((latest, msg) => {
+    return msg.createdAt > latest ? msg.createdAt : latest;
+  }, "");
 }
 
 function mergeMessages(
@@ -54,15 +91,49 @@ export function SupportChatWidget() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [agentTyping, setAgentTyping] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const bootstrappedRef = useRef(false);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingSentRef = useRef(false);
+  const openRef = useRef(false);
+  const lastReadRef = useRef("");
 
   useEffect(() => {
     setVisitorId(getVisitorId());
   }, []);
+
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
+
+  useEffect(() => {
+    if (!visitorId) return;
+    lastReadRef.current = getLastReadAt(visitorId);
+  }, [visitorId]);
+
+  const markAsRead = useCallback(
+    (msgs: SupportChatMessage[]) => {
+      if (!visitorId) return;
+      const stamp = latestMessageAt(msgs) || new Date().toISOString();
+      lastReadRef.current = stamp;
+      setLastReadAt(visitorId, stamp);
+      setUnreadCount(0);
+    },
+    [visitorId]
+  );
+
+  const refreshUnread = useCallback(
+    (msgs: SupportChatMessage[]) => {
+      if (openRef.current) {
+        markAsRead(msgs);
+        return;
+      }
+      setUnreadCount(countUnread(msgs, lastReadRef.current));
+    },
+    [markAsRead]
+  );
 
   // Lock page scroll while chat is open (mobile keyboard friendly).
   useEffect(() => {
@@ -125,6 +196,11 @@ export function SupportChatWidget() {
       setStatus(json.data.status);
       setNeedsEmail(json.data.needsEmailForAgent);
       bootstrappedRef.current = true;
+      if (openRef.current) {
+        markAsRead(json.data.messages);
+      } else {
+        refreshUnread(json.data.messages);
+      }
     } catch (err) {
       if (!silent) {
         setError(err instanceof Error ? err.message : "Could not start chat");
@@ -132,23 +208,27 @@ export function SupportChatWidget() {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [visitorId]);
+  }, [visitorId, markAsRead, refreshUnread]);
 
   useEffect(() => {
-    if (open && visitorId && !bootstrappedRef.current) {
-      void bootstrap();
+    if (open && visitorId) {
+      if (!bootstrappedRef.current) {
+        void bootstrap();
+      } else {
+        markAsRead(messages);
+      }
     }
     if (!open) {
-      bootstrappedRef.current = false;
       setAgentTyping(false);
       lastTypingSentRef.current = false;
+      refreshUnread(messages);
     }
-  }, [open, visitorId, bootstrap]);
+  }, [open, visitorId, bootstrap, markAsRead, refreshUnread, messages]);
 
+  // Keep listening in background so the unread badge updates when chat is closed.
   const realtimeJoin = useMemo(
-    () =>
-      open && visitorId ? { visitorId, role: "visitor" as const } : null,
-    [open, visitorId]
+    () => (visitorId ? { visitorId, role: "visitor" as const } : null),
+    [visitorId]
   );
 
   useSupportRealtime(realtimeJoin, (event) => {
@@ -158,7 +238,15 @@ export function SupportChatWidget() {
       if (event.conversationId) setConversationId(event.conversationId);
       setStatus(event.status);
       setNeedsEmail(event.needsEmailForAgent);
-      setMessages((prev) => mergeMessages(prev, event.messages));
+      setMessages((prev) => {
+        const next = mergeMessages(prev, event.messages);
+        if (openRef.current) {
+          markAsRead(next);
+        } else {
+          refreshUnread(next);
+        }
+        return next;
+      });
       setAgentTyping(false);
       return;
     }
@@ -171,9 +259,15 @@ export function SupportChatWidget() {
     }
 
     if (event.type === "typing" && event.role === "agent") {
-      setAgentTyping(event.isTyping);
+      if (openRef.current) setAgentTyping(event.isTyping);
     }
   });
+
+  // Soft load once so unread count is ready before the user opens chat.
+  useEffect(() => {
+    if (!visitorId || bootstrappedRef.current) return;
+    void bootstrap({ silent: true });
+  }, [visitorId, bootstrap]);
 
   const notifyTyping = useCallback(
     (isTyping: boolean) => {
@@ -275,10 +369,10 @@ export function SupportChatWidget() {
   return (
     <div
       className={cn(
-        "pointer-events-none z-[90]",
+        "pointer-events-none z-[90] overflow-visible",
         open
           ? "fixed inset-0 md:inset-auto md:bottom-6 md:right-6"
-          : "fixed bottom-4 right-4 md:bottom-6 md:right-6"
+          : "fixed bottom-5 right-5 md:bottom-6 md:right-6"
       )}
     >
       {open ? (
@@ -440,16 +534,80 @@ export function SupportChatWidget() {
       ) : null}
 
       {!open ? (
-        <Button
+        <button
           type="button"
-          size="lg"
-          className="pointer-events-auto h-12 rounded-full px-4 shadow-lg"
           onClick={() => setOpen(true)}
-          aria-label="Open support chat"
+          aria-label={
+            unreadCount > 0
+              ? `Open support chat, ${unreadCount} unread`
+              : "Open support chat"
+          }
+          className="pointer-events-auto group relative flex items-center gap-2.5 overflow-visible rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
-          <MessageCircle className="h-5 w-5" />
-          <span className="ml-1.5 hidden sm:inline">Chat</span>
-        </Button>
+          <span className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-visible">
+            <span
+              aria-hidden
+              className={cn(
+                "support-fab-ring absolute inset-0 rounded-full border border-primary/35",
+                unreadCount > 0 && "border-red-400/50"
+              )}
+            />
+            <span
+              aria-hidden
+              className={cn(
+                "support-fab-ring-delay absolute inset-0 rounded-full border border-primary/25",
+                unreadCount > 0 && "border-red-400/40"
+              )}
+            />
+            <span
+              className={cn(
+                "relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-primary text-primary-foreground shadow-lift transition duration-300",
+                "bg-[linear-gradient(145deg,color-mix(in_oklab,var(--primary)_88%,white),var(--primary)_55%,color-mix(in_oklab,var(--primary)_82%,black))]",
+                "group-hover:scale-[1.04] group-hover:shadow-[0_16px_40px_-10px_rgb(53_94_59_/_0.45)]",
+                "group-active:scale-[0.98]",
+                unreadCount > 0 && "ring-2 ring-red-400 ring-offset-2 ring-offset-background"
+              )}
+            >
+              <span className="support-fab-float relative flex items-center justify-center">
+                <Headset className="h-6 w-6" strokeWidth={1.75} />
+                <span
+                  aria-hidden
+                  className="absolute -bottom-0.5 -right-1.5 flex h-4 w-[1.15rem] items-center justify-center gap-[2px] rounded-full bg-white px-[3px] shadow-sm"
+                >
+                  <span className="support-fab-dot h-[3px] w-[3px] rounded-full bg-primary [animation-delay:0ms]" />
+                  <span className="support-fab-dot h-[3px] w-[3px] rounded-full bg-primary [animation-delay:160ms]" />
+                  <span className="support-fab-dot h-[3px] w-[3px] rounded-full bg-primary [animation-delay:320ms]" />
+                </span>
+              </span>
+              <span
+                aria-hidden
+                className="absolute bottom-1.5 left-1.5 h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_0_2px_var(--primary)]"
+              >
+                <span className="absolute inset-0 animate-ping rounded-full bg-emerald-300/80" />
+              </span>
+            </span>
+
+            {unreadCount > 0 ? (
+              <span
+                className="absolute right-0 top-0 z-20 flex h-5 min-w-5 -translate-y-1/4 translate-x-1/4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white shadow-md ring-2 ring-white"
+                aria-hidden
+              >
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            ) : null}
+          </span>
+
+          <span className="hidden overflow-hidden rounded-full border border-primary/15 bg-white/95 py-2.5 pl-3.5 pr-4 text-left shadow-soft backdrop-blur-sm transition duration-300 group-hover:border-primary/25 group-hover:shadow-lift sm:block">
+            <span className="block font-button text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+              Support
+            </span>
+            <span className="block text-xs text-muted-foreground">
+              {unreadCount > 0
+                ? `${unreadCount > 9 ? "9+" : unreadCount} new message${unreadCount === 1 ? "" : "s"}`
+                : "We are online"}
+            </span>
+          </span>
+        </button>
       ) : null}
     </div>
   );
