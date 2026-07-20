@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Headset, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,13 +92,15 @@ export function SupportChatWidget() {
   const [error, setError] = useState<string | null>(null);
   const [agentTyping, setAgentTyping] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [mobileShellStyle, setMobileShellStyle] = useState<CSSProperties | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
   const bootstrappedRef = useRef(false);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingSentRef = useRef(false);
   const openRef = useRef(false);
   const lastReadRef = useRef("");
+  const bodyScrollYRef = useRef(0);
 
   useEffect(() => {
     setVisitorId(getVisitorId());
@@ -135,47 +137,100 @@ export function SupportChatWidget() {
     [markAsRead]
   );
 
-  // Lock page scroll while chat is open (mobile keyboard friendly).
+  // Freeze page scroll while chat is open (prevents iOS keyboard "jump").
   useEffect(() => {
     if (!open) return;
-    const prevOverflow = document.body.style.overflow;
-    const prevTouch = document.body.style.touchAction;
-    document.body.style.overflow = "hidden";
-    document.body.style.touchAction = "none";
+
+    bodyScrollYRef.current = window.scrollY;
+    const { body, documentElement } = document;
+    const prev = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      width: body.style.width,
+      overflow: body.style.overflow,
+      touchAction: body.style.touchAction,
+      htmlOverflow: documentElement.style.overflow,
+    };
+
+    body.style.position = "fixed";
+    body.style.top = `-${bodyScrollYRef.current}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
+    body.style.touchAction = "none";
+    documentElement.style.overflow = "hidden";
+
     return () => {
-      document.body.style.overflow = prevOverflow;
-      document.body.style.touchAction = prevTouch;
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.left = prev.left;
+      body.style.right = prev.right;
+      body.style.width = prev.width;
+      body.style.overflow = prev.overflow;
+      body.style.touchAction = prev.touchAction;
+      documentElement.style.overflow = prev.htmlOverflow;
+      window.scrollTo(0, bodyScrollYRef.current);
     };
   }, [open]);
 
-  // Keep panel height aligned with visual viewport when mobile keyboard opens.
+  // Pin chat shell to the visual viewport so the keyboard does not blow the layout.
   useEffect(() => {
     if (!open || typeof window === "undefined") return;
 
-    const vv = window.visualViewport;
+    const isDesktop = () => window.matchMedia("(min-width: 768px)").matches;
+
     const update = () => {
+      if (isDesktop()) {
+        setMobileShellStyle(null);
+        return;
+      }
+
+      const vv = window.visualViewport;
+      const top = vv?.offsetTop ?? 0;
       const height = vv?.height ?? window.innerHeight;
-      setViewportHeight(height);
+
+      setMobileShellStyle({
+        position: "fixed",
+        top: `${top}px`,
+        left: "0px",
+        right: "0px",
+        bottom: "auto",
+        width: "100%",
+        height: `${height}px`,
+        maxHeight: `${height}px`,
+      });
     };
 
     update();
+    const vv = window.visualViewport;
     vv?.addEventListener("resize", update);
     vv?.addEventListener("scroll", update);
     window.addEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
 
     return () => {
       vv?.removeEventListener("resize", update);
       vv?.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
+      setMobileShellStyle(null);
     };
   }, [open]);
 
   const scrollToBottom = useCallback(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = messagesRef.current;
+    if (!el) return;
+    // Avoid scrollIntoView — it scrolls the page and breaks iOS keyboard layout.
+    el.scrollTop = el.scrollHeight;
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
+    if (!open) return;
+    const id = window.requestAnimationFrame(scrollToBottom);
+    return () => window.cancelAnimationFrame(id);
   }, [messages, open, agentTyping, scrollToBottom]);
 
   const bootstrap = useCallback(async (opts?: { silent?: boolean }) => {
@@ -374,19 +429,10 @@ export function SupportChatWidget() {
           ? "fixed inset-0 md:inset-auto md:bottom-6 md:right-6"
           : "fixed bottom-5 right-3 md:bottom-6 md:right-4"
       )}
+      style={open ? (mobileShellStyle ?? undefined) : undefined}
     >
       {open ? (
-        <div
-          className="pointer-events-auto flex w-full flex-col overflow-hidden bg-white md:h-[min(32rem,70vh)] md:w-[22rem] md:rounded-xl md:border md:border-border md:shadow-2xl"
-          style={
-            viewportHeight
-              ? {
-                  height: viewportHeight,
-                  maxHeight: viewportHeight,
-                }
-              : { height: "100dvh" }
-          }
-        >
+        <div className="pointer-events-auto flex h-full w-full flex-col overflow-hidden bg-white md:h-[min(32rem,70vh)] md:w-[22rem] md:rounded-xl md:border md:border-border md:shadow-2xl">
           <div className="flex shrink-0 items-center justify-between bg-primary px-4 py-3 text-primary-foreground">
             <div>
               <p className="font-button text-sm font-semibold">ROOTORA Support</p>
@@ -412,7 +458,10 @@ export function SupportChatWidget() {
             </Button>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto overscroll-contain bg-muted/20 p-3">
+          <div
+            ref={messagesRef}
+            className="min-h-0 flex-1 space-y-2.5 overflow-y-auto overscroll-contain bg-muted/20 p-3"
+          >
             {showConnecting ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
                 Connecting…
@@ -518,6 +567,10 @@ export function SupportChatWidget() {
                 maxLength={2000}
                 enterKeyHint="send"
                 autoComplete="off"
+                onFocus={() => {
+                  window.setTimeout(scrollToBottom, 50);
+                  window.setTimeout(scrollToBottom, 300);
+                }}
               />
               <Button
                 type="submit"
