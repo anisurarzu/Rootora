@@ -12,7 +12,7 @@ export const siteConfig = {
     youtube: "https://youtube.com/@rootora",
   },
   contact: {
-    email: "hello@rootora.com",
+    email: "shoprootora@gmail.com",
     phone: "+880 1XXX-XXXXXX",
     address: "Dhaka, Bangladesh",
   },

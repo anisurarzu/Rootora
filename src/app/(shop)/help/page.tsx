@@ -19,7 +19,7 @@ const helpSections = [
       },
       {
         q: "Can I modify or cancel my order?",
-        a: "Orders can be modified or cancelled within 2 hours of placement. Contact us at hello@rootora.com with your order number.",
+        a: "Orders can be modified or cancelled within 2 hours of placement. Contact us at shoprootora@gmail.com with your order number.",
       },
       {
         q: "What payment methods do you accept?",

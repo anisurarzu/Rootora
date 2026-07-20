@@ -57,7 +57,7 @@ const AUTO_REPLY_RULES: Array<{
   {
     match: /\b(contact|phone|email|address|location|যোগাযোগ)\b/i,
     reply:
-      "You can reach us via this chat, or visit /contact.\nEmail: hello@rootora.com\nFor order-specific help, send your RT- order number here or ask for a human agent.",
+      "You can reach us via this chat, or visit /contact.\nEmail: shoprootora@gmail.com\nFor order-specific help, send your RT- order number here or ask for a human agent.",
   },
   {
     match: /\b(sustainability|farmer|organic|farm|কৃষক)\b/i,
