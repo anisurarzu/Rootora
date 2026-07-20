@@ -589,9 +589,36 @@ model SupportMessage {
   @@map("support_messages")
 }
 
+/// Admin-managed job posts shown on /careers
+model CareerPost {
+  id                String              @id @default(cuid())
+  slug              String              @unique
+  title             String
+  department        String?
+  type              String?
+  location          String?
+  stipend           String?
+  schedule          String?
+  openings          Int                 @default(1)
+  summary           String              @db.Text
+  responsibilities  String[]            @default([])
+  requirements      String[]            @default([])
+  alwaysOpen        Boolean             @default(true)
+  published         Boolean             @default(false)
+  sortOrder         Int                 @default(0)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  applications      CareerApplication[]
+
+  @@index([published, sortOrder])
+  @@map("career_posts")
+}
+
 /// Public career applications from /careers
 model CareerApplication {
   id              String                  @id @default(cuid())
+  postId          String?
+  post            CareerPost?             @relation(fields: [postId], references: [id], onDelete: SetNull)
   positionSlug    String
   positionTitle   String
   fullName        String
@@ -610,6 +637,7 @@ model CareerApplication {
 
   @@index([status, createdAt])
   @@index([positionSlug, createdAt])
+  @@index([postId])
   @@index([email])
   @@map("career_applications")
 }

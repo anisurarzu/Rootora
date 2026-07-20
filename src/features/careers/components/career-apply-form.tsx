@@ -6,10 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { submitCareerApplication } from "@/features/careers/actions";
-import type { CareerPosition } from "@/features/careers/positions";
+
+type ApplyPosition = {
+  slug: string;
+  title: string;
+};
 
 type CareerApplyFormProps = {
-  positions: CareerPosition[];
+  positions: ApplyPosition[];
   defaultPositionSlug?: string;
 };
 
