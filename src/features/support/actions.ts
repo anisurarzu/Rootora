@@ -14,7 +14,19 @@ import { requirePermission } from "@/lib/auth-server";
 export async function replyToSupportChat(
   conversationId: string,
   body: string
-): Promise<ActionResult<{ messageId: string }>> {
+): Promise<
+  ActionResult<{
+    messageId: string;
+    message: {
+      id: string;
+      sender: "AGENT";
+      body: string;
+      createdAt: string;
+      agentUserId: string | null;
+    };
+    status: string;
+  }>
+> {
   const session = await requirePermission(["admin.access"]);
 
   try {
@@ -39,11 +51,19 @@ export async function replyToSupportChat(
         },
       ],
     });
-    revalidatePath("/admin/support");
-    revalidatePath(`/admin/support/${conversationId}`);
     return {
       success: true,
-      data: { messageId: message.id },
+      data: {
+        messageId: message.id,
+        message: {
+          id: message.id,
+          sender: "AGENT",
+          body: message.body,
+          createdAt: message.createdAt,
+          agentUserId: message.agentUserId,
+        },
+        status: message.status,
+      },
       message: "Reply sent",
     };
   } catch (error) {
@@ -60,12 +80,16 @@ export async function closeSupportConversation(
   await requirePermission(["admin.access"]);
 
   try {
-    await updateConversationStatus(
+    const updated = await updateConversationStatus(
       conversationId,
       SupportConversationStatus.CLOSED
     );
-    revalidatePath("/admin/support");
-    revalidatePath(`/admin/support/${conversationId}`);
+    publishSupportRealtime({
+      type: "conversation:update",
+      conversationId,
+      visitorId: updated.visitorId,
+      status: "CLOSED",
+    });
     return { success: true, message: "Conversation closed" };
   } catch (error) {
     return {

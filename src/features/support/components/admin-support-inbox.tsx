@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
@@ -62,84 +60,118 @@ type AdminSupportInboxProps = {
 };
 
 export function AdminSupportInbox({
-  conversations,
+  conversations: initialConversations,
   initialConversation,
 }: AdminSupportInboxProps) {
-  const router = useRouter();
+  const [conversations, setConversations] = useState(initialConversations);
   const [selectedId, setSelectedId] = useState(initialConversation?.id ?? "");
   const [detail, setDetail] = useState(initialConversation);
   const [draft, setDraft] = useState("");
   const [pending, startTransition] = useTransition();
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const [visitorTyping, setVisitorTyping] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingSentRef = useRef(false);
+  const selectedIdRef = useRef(selectedId);
 
   useEffect(() => {
-    setDetail(initialConversation);
-    setSelectedId(initialConversation?.id ?? "");
-    setVisitorTyping(false);
-    lastTypingSentRef.current = false;
-  }, [initialConversation]);
+    selectedIdRef.current = selectedId;
+  }, [selectedId]);
+
+  // Sync list only when server props change from navigation (not after every reply).
+  useEffect(() => {
+    setConversations(initialConversations);
+  }, [initialConversations]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [detail?.messages.length, visitorTyping]);
 
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      router.refresh();
-    }, 5000);
-    return () => window.clearInterval(id);
-  }, [router]);
+  const loadConversation = useCallback(async (id: string) => {
+    setLoadingDetail(true);
+    setVisitorTyping(false);
+    lastTypingSentRef.current = false;
+    try {
+      const res = await fetch(`/api/v1/support/admin/${encodeURIComponent(id)}`);
+      const json = await res.json();
+      if (!json.success || !json.data) {
+        throw new Error(json.error || "Could not load conversation");
+      }
+      setSelectedId(id);
+      setDetail(json.data);
+      window.history.replaceState(null, "", `/admin/support?id=${id}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not load chat");
+    } finally {
+      setLoadingDetail(false);
+    }
+  }, []);
 
   useSupportRealtime(
     selectedId
       ? { role: "admin", conversationId: selectedId }
       : { role: "admin" },
     (event) => {
-      if (event.type === "message" && event.conversationId === selectedId) {
-        setVisitorTyping(false);
-        setDetail((prev) => {
-          if (!prev || prev.id !== event.conversationId) return prev;
+      if (event.type === "message") {
+        const activeId = selectedIdRef.current;
 
-          const incomingIds = new Set(event.messages.map((m) => m.id));
-          const isFullSnapshot =
-            event.messages.length > 0 &&
-            prev.messages.every((m) => incomingIds.has(m.id)) &&
-            event.messages.length >= prev.messages.length;
+        setConversations((prev) => {
+          const idx = prev.findIndex((c) => c.id === event.conversationId);
+          if (idx < 0) return prev;
+          const next = [...prev];
+          const last = event.messages[event.messages.length - 1];
+          next[idx] = {
+            ...next[idx],
+            status: event.status,
+            lastMessageAt: last?.createdAt ?? next[idx].lastMessageAt,
+            preview: last?.body ?? next[idx].preview,
+            messageCount: next[idx].messageCount + event.messages.length,
+          };
+          // Move updated chat to top
+          const [item] = next.splice(idx, 1);
+          return [item, ...next];
+        });
 
-          if (isFullSnapshot) {
+        if (event.conversationId === activeId) {
+          setVisitorTyping(false);
+          setDetail((prev) => {
+            if (!prev || prev.id !== event.conversationId) return prev;
+
+            const ids = new Set(prev.messages.map((m) => m.id));
+            const nextMessages = [...prev.messages];
+            for (const msg of event.messages) {
+              if (!ids.has(msg.id)) nextMessages.push(msg);
+            }
             return {
               ...prev,
               status: event.status,
-              messages: event.messages,
+              messages: nextMessages,
               visitorId: event.visitorId,
             };
-          }
-
-          const ids = new Set(prev.messages.map((m) => m.id));
-          const nextMessages = [...prev.messages];
-          for (const msg of event.messages) {
-            if (!ids.has(msg.id)) nextMessages.push(msg);
-          }
-          return {
-            ...prev,
-            status: event.status,
-            messages: nextMessages,
-            visitorId: event.visitorId,
-          };
-        });
+          });
+        }
       }
 
       if (event.type === "conversation:update") {
-        router.refresh();
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === event.conversationId
+              ? { ...c, status: event.status }
+              : c
+          )
+        );
+        setDetail((prev) =>
+          prev && prev.id === event.conversationId
+            ? { ...prev, status: event.status }
+            : prev
+        );
       }
 
       if (
         event.type === "typing" &&
-        event.conversationId === selectedId &&
+        event.conversationId === selectedIdRef.current &&
         event.role === "visitor"
       ) {
         setVisitorTyping(event.isTyping);
@@ -183,13 +215,42 @@ export function AdminSupportInbox({
     notifyTyping(false);
     startTransition(async () => {
       const result = await replyToSupportChat(selectedId, body);
-      if (!result.success) {
-        toast.error(result.error);
+      if (!result.success || !result.data) {
+        toast.error(result.success ? "Could not send reply" : result.error);
         return;
       }
+
       setDraft("");
+      const msg = result.data.message;
+
+      setDetail((prev) => {
+        if (!prev || prev.id !== selectedId) return prev;
+        if (prev.messages.some((m) => m.id === msg.id)) {
+          return { ...prev, status: result.data!.status };
+        }
+        return {
+          ...prev,
+          status: result.data!.status,
+          messages: [...prev.messages, msg],
+        };
+      });
+
+      setConversations((prev) => {
+        const idx = prev.findIndex((c) => c.id === selectedId);
+        if (idx < 0) return prev;
+        const next = [...prev];
+        const updated = {
+          ...next[idx],
+          status: result.data!.status,
+          lastMessageAt: msg.createdAt,
+          preview: msg.body,
+          messageCount: next[idx].messageCount + 1,
+        };
+        next.splice(idx, 1);
+        return [updated, ...next];
+      });
+
       toast.success("Reply sent");
-      router.refresh();
     });
   };
 
@@ -201,8 +262,15 @@ export function AdminSupportInbox({
         toast.error(result.error);
         return;
       }
+      setDetail((prev) =>
+        prev && prev.id === selectedId ? { ...prev, status: "CLOSED" } : prev
+      );
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === selectedId ? { ...c, status: "CLOSED" } : c
+        )
+      );
       toast.success("Conversation closed");
-      router.refresh();
     });
   };
 
@@ -217,10 +285,10 @@ export function AdminSupportInbox({
       }
       toast.success("Conversation deleted");
       setConfirmDeleteOpen(false);
+      setConversations((prev) => prev.filter((c) => c.id !== selectedId));
       setDetail(null);
       setSelectedId("");
-      router.push("/admin/support");
-      router.refresh();
+      window.history.replaceState(null, "", "/admin/support");
     });
   };
 
@@ -243,10 +311,11 @@ export function AdminSupportInbox({
           ) : (
             conversations.map((c) => (
               <li key={c.id}>
-                <Link
-                  href={`/admin/support?id=${c.id}`}
+                <button
+                  type="button"
+                  onClick={() => void loadConversation(c.id)}
                   className={cn(
-                    "block border-b border-border/60 px-4 py-3 transition-colors hover:bg-muted/40",
+                    "block w-full border-b border-border/60 px-4 py-3 text-left transition-colors hover:bg-muted/40",
                     selectedId === c.id && "bg-primary/5"
                   )}
                 >
@@ -262,7 +331,7 @@ export function AdminSupportInbox({
                   <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
                     {c.preview}
                   </p>
-                </Link>
+                </button>
               </li>
             ))
           )}
@@ -270,7 +339,11 @@ export function AdminSupportInbox({
       </aside>
 
       <section className="flex min-h-[28rem] flex-col">
-        {!detail ? (
+        {loadingDetail ? (
+          <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
+            Loading conversation…
+          </div>
+        ) : !detail ? (
           <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
             Select a conversation to reply
           </div>
