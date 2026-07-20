@@ -270,12 +270,11 @@ export function HeroManager({ settings, slides, canManage }: HeroManagerProps) {
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
           <div>
-            <CardTitle>Product offer cards</CardTitle>
+            <CardTitle>Campaign slider</CardTitle>
             <CardDescription>
-              Storefront hero always rotates Best Seller products from the
-              catalog. Mark products as Best Seller in Products — these manual
-              slides below are kept for reference only and are not shown on the
-              live homepage.
+              Active slides appear in the homepage hero carousel. Upload
+              Daraz-style campaign banners, set the link, and toggle Active to
+              show or hide each slide on the live storefront.
             </CardDescription>
           </div>
           {canManage ? (

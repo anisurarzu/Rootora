@@ -61,11 +61,15 @@ export const FOOTER_LINKS = {
 
 export const POPULAR_SEARCHES = [
   "Mustard honey",
-  "Punjabi",
-  "T-shirt",
-  "Mango",
+  "Porabari cham cham",
+  "Black punjabi",
+  "White punjabi",
+  "Kalojira honey",
+  "Litchi honey",
   "Organic",
   "Gift hamper",
+  "T-shirt",
+  "Seasonal fruits",
 ];
 
 export const DISTRICTS = [

@@ -213,6 +213,7 @@ export async function getStorefrontProducts(
       ? { category: { slug: params.category } }
       : {}),
     ...(params.filter === "fresh-today" ? { freshToday: true } : {}),
+    ...(params.filter === "on-sale" ? { salePrice: { not: null } } : {}),
     ...(params.q
       ? {
           OR: [
@@ -236,7 +237,40 @@ export async function getStorefrontProducts(
     include: publishedProductInclude,
   });
 
-  return products.map(mapDbProductToStorefront);
+  const mapped = products.map(mapDbProductToStorefront);
+
+  if (params.filter === "on-sale") {
+    return mapped.filter(
+      (product) =>
+        product.originalPrice != null &&
+        product.originalPrice > product.price
+    );
+  }
+
+  return mapped;
+}
+
+export async function getStorefrontSaleProducts(
+  limit = 6
+): Promise<Product[]> {
+  const products = await prisma.product.findMany({
+    where: {
+      ...publishedWhere,
+      salePrice: { not: null },
+    },
+    include: publishedProductInclude,
+    orderBy: { updatedAt: "desc" },
+    take: limit * 4,
+  });
+
+  return products
+    .map(mapDbProductToStorefront)
+    .filter(
+      (product) =>
+        product.originalPrice != null &&
+        product.originalPrice > product.price
+    )
+    .slice(0, limit);
 }
 
 export async function getStorefrontProductBySlug(

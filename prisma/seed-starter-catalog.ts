@@ -125,24 +125,6 @@ const CATEGORIES: CategorySeed[] = [
 
 const PRODUCTS: ProductSeed[] = [
   {
-    name: "Premium Rosogolla Box",
-    slug: "premium-rosogolla-box",
-    categorySlug: "sweets",
-    shortDescription:
-      "Soft, syrupy Bengali rosogolla in a gift-ready box — classic festive sweetness.",
-    description:
-      "A premium box of traditional Bengali rosogolla made with soft chhana balls soaked in light sugar syrup. Perfect for celebrations, guests, and everyday dessert moments. Best enjoyed chilled.",
-    price: 650,
-    originalPrice: 780,
-    unit: "box",
-    tags: ["sweets", "rosogolla", "mishti", "dessert", "festive"],
-    collection: "sweets",
-    organic: false,
-    featured: true,
-    seasonal: false,
-    imageFiles: ["product-rosogolla-main.png", "product-rosogolla-detail.png"],
-  },
-  {
     name: "Black Cotton Punjabi",
     slug: "black-cotton-punjabi",
     categorySlug: "traditional-clothing",

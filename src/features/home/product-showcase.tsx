@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { SectionHeading } from "@/components/common/section-heading";
 import { ProductCard } from "@/components/shop/product-card";
 import { ProductGrid } from "@/components/shop/product-grid";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,7 @@ import {
   staggerContainer,
   viewportOnce,
 } from "@/lib/animations";
+import { cn } from "@/lib/utils";
 
 interface ProductShowcaseProps {
   eyebrow: string;
@@ -21,6 +21,8 @@ interface ProductShowcaseProps {
   products: Product[];
   viewAllHref: string;
   id?: string;
+  /** Tighter layout for homepage sections */
+  compact?: boolean;
 }
 
 export function ProductShowcase({
@@ -30,26 +32,57 @@ export function ProductShowcase({
   products,
   viewAllHref,
   id,
+  compact = false,
 }: ProductShowcaseProps) {
   return (
     <section
       id={id}
-      className="section-padding bg-surface"
+      className={cn(
+        "bg-surface",
+        compact ? "py-4 sm:py-5" : "section-padding"
+      )}
       aria-labelledby={id ? `${id}-heading` : undefined}
     >
       <div className="container-rootora">
-        <div className="mb-12 flex flex-col items-start justify-between gap-6 md:mb-16 md:flex-row md:items-end">
-          <SectionHeading
-            eyebrow={eyebrow}
-            title={title}
-            description={description}
-            align="left"
-            className="mb-0"
-          />
-          <Button variant="outline" asChild className="shrink-0">
+        <div
+          className={cn(
+            "flex items-end justify-between gap-3",
+            compact ? "mb-3 sm:mb-4" : "mb-12 flex-col md:mb-16 md:flex-row"
+          )}
+        >
+          <div>
+            <p
+              className={cn(
+                "font-button font-semibold uppercase tracking-[0.18em] text-secondary",
+                compact ? "text-[10px] sm:text-xs" : "mb-3 text-xs"
+              )}
+            >
+              {eyebrow}
+            </p>
+            <h2
+              id={id ? `${id}-heading` : undefined}
+              className={cn(
+                "font-heading font-semibold text-heading",
+                compact ? "text-lg sm:text-xl" : "text-2xl md:text-3xl lg:text-4xl"
+              )}
+            >
+              {title}
+            </h2>
+            {description && !compact ? (
+              <p className="mt-4 max-w-2xl text-base text-muted-foreground md:text-lg">
+                {description}
+              </p>
+            ) : null}
+          </div>
+          <Button
+            variant="outline"
+            size={compact ? "sm" : "default"}
+            className="shrink-0"
+            asChild
+          >
             <Link href={viewAllHref}>
               View All
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Link>
           </Button>
         </div>
@@ -60,10 +93,10 @@ export function ProductShowcase({
           viewport={viewportOnce}
           variants={staggerContainer}
         >
-          <ProductGrid>
+          <ProductGrid compact={compact}>
             {products.map((product, index) => (
               <motion.div key={product.id} variants={fadeInUp} className="h-full">
-                <ProductCard product={product} priority={index < 2} />
+                <ProductCard product={product} priority={index < 3} />
               </motion.div>
             ))}
           </ProductGrid>

@@ -14,6 +14,7 @@ import { TraditionalClothing } from "@/features/home/traditional-clothing";
 import {
   getStorefrontCategories,
   getStorefrontProductsByFlag,
+  getStorefrontSaleProducts,
 } from "@/features/products/storefront-queries";
 import { siteConfig } from "@/config/site";
 
@@ -27,6 +28,7 @@ export default async function HomePage() {
     freshToday,
     bestSellers,
     organicProducts,
+    flashSaleProducts,
   ] = await Promise.all([
     getHeroContent(),
     getStorefrontCategories({ onlyWithProducts: true }),
@@ -34,6 +36,7 @@ export default async function HomePage() {
     getStorefrontProductsByFlag("freshToday"),
     getStorefrontProductsByFlag("bestSeller"),
     getStorefrontProductsByFlag("organic", 4),
+    getStorefrontSaleProducts(6),
   ]);
 
   const jsonLd = {
@@ -56,8 +59,19 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <HeroSection content={heroContent} />
+      <HeroSection content={heroContent} flashSaleProducts={flashSaleProducts} />
       <FeaturedCategories categories={categories} />
+
+      {bestSellers.length > 0 && (
+        <ProductShowcase
+          id="best-sellers"
+          eyebrow="Popular"
+          title="Best Sellers"
+          products={bestSellers}
+          viewAllHref="/shop?sort=popular"
+          compact
+        />
+      )}
 
       {seasonalProducts.length > 0 && (
         <ProductShowcase
@@ -78,17 +92,6 @@ export default async function HomePage() {
           description="Farm-fresh produce delivered within hours of harvest."
           products={freshToday}
           viewAllHref="/shop?filter=fresh-today"
-        />
-      )}
-
-      {bestSellers.length > 0 && (
-        <ProductShowcase
-          id="best-sellers"
-          eyebrow="Popular"
-          title="Best Sellers"
-          description="Community favorites loved by thousands of customers."
-          products={bestSellers}
-          viewAllHref="/shop?sort=popular"
         />
       )}
 
