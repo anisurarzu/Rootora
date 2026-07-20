@@ -7,7 +7,7 @@ export const visitorIdSchema = z.string().min(8).max(64);
 export const emailSchema = z.string().trim().email("Enter a valid email");
 
 /** Customer chat history expires after this much inactivity. */
-export const CHAT_HISTORY_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
+export const CHAT_HISTORY_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 const ORDER_NUMBER_RE = /\b(RT-\d{4}-\d{1,3}-\d{3,})\b/i;
 
