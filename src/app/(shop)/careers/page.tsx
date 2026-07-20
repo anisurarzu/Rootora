@@ -18,7 +18,7 @@ import {
 
 export const metadata: Metadata = {
   title: "Careers",
-  description: `Join ${siteConfig.name} — part-time student roles for social media and customer messaging. Always open. ৳5,000/month.`,
+  description: `Join ${siteConfig.name} — part-time Social Media Associate (2 vacancies). Facebook, Instagram & customer messages. Always open. ৳5,000/month.`,
 };
 
 export default function CareersPage() {
@@ -33,10 +33,10 @@ export default function CareersPage() {
             <h1 className="mt-4 font-heading text-4xl font-semibold tracking-tight text-heading md:text-5xl">
               {siteConfig.name}
             </h1>
-            <p className="mt-3 text-lg text-muted-foreground md:text-xl">
-              Part-time openings for students who can help maintain our social
-              pages and reply to customer messages.
-            </p>
+              <p className="mt-3 text-lg text-muted-foreground md:text-xl">
+                Part-time opening for students who can help maintain our social
+                pages and reply to customer messages.
+              </p>
           </div>
 
           <article className="mx-auto mt-10 max-w-3xl overflow-hidden rounded-2xl border border-primary/15 bg-white/90 shadow-lift backdrop-blur-sm">
@@ -51,7 +51,7 @@ export default function CareersPage() {
                   </h2>
                 </div>
                 <Badge className="border-white/25 bg-white/15 text-primary-foreground hover:bg-white/20">
-                  {TOTAL_OPENINGS} positions open
+                  {TOTAL_OPENINGS} vacancies open
                 </Badge>
               </div>
             </div>
@@ -59,8 +59,8 @@ export default function CareersPage() {
             <div className="space-y-6 px-6 py-7 md:px-8 md:py-8">
               <p className="text-sm leading-relaxed text-foreground/90 md:text-base">
                 ROOTORA is looking for sincere, student-friendly teammates to
-                support day-to-day Facebook & Instagram page maintenance and
-                customer message replies. These roles stay open — apply anytime.
+                support Facebook & Instagram page maintenance and customer
+                message replies. This role stays open — apply anytime.
               </p>
 
               <div className="grid gap-3 sm:grid-cols-2">
@@ -108,7 +108,7 @@ export default function CareersPage() {
                 Open positions
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Two part-time seats. Same stipend and schedule for both.
+                One role · {TOTAL_OPENINGS} vacancies · Always open.
               </p>
             </div>
 
