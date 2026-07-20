@@ -39,7 +39,12 @@ export function LoginForm({ nextPath }: LoginFormProps) {
     setLoading(false);
 
     if (error) {
-      toast.error(error.message || "Invalid email or password");
+      const message = error.message || "Invalid email or password";
+      toast.error(
+        /too many|rate/i.test(message)
+          ? "Too many attempts. Please wait a minute and try again."
+          : message
+      );
       return;
     }
 

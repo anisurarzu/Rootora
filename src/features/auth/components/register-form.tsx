@@ -35,7 +35,12 @@ export function RegisterForm() {
     setLoading(false);
 
     if (error) {
-      toast.error(error.message || "Could not create account");
+      const message = error.message || "Could not create account";
+      toast.error(
+        /too many|rate/i.test(message)
+          ? "Too many attempts. Please wait a minute and try again."
+          : message
+      );
       return;
     }
 
