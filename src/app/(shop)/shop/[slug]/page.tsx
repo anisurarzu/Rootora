@@ -14,6 +14,14 @@ import {
   getRelatedStorefrontProducts,
   getStorefrontProductBySlug,
 } from "@/features/products/storefront-queries";
+import { ProductReviews } from "@/features/reviews/components/product-reviews";
+import {
+  getProductReviewSummary,
+  getUserReviewForProduct,
+  listProductReviews,
+  userHasPurchasedProduct,
+} from "@/features/reviews/service";
+import { getSession } from "@/lib/auth-server";
 import { formatPrice } from "@/lib/utils";
 import { siteConfig } from "@/config/site";
 
@@ -54,7 +62,19 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   if (!product) notFound();
 
-  const relatedProducts = await getRelatedStorefrontProducts(product);
+  const session = await getSession();
+  const [relatedProducts, reviewSummary, reviews, existingReview, canMarkVerified] =
+    await Promise.all([
+      getRelatedStorefrontProducts(product),
+      getProductReviewSummary(product.id),
+      listProductReviews(product.id),
+      session?.user?.id
+        ? getUserReviewForProduct(session.user.id, product.id)
+        : Promise.resolve(null),
+      session?.user?.id
+        ? userHasPurchasedProduct(session.user.id, product.id)
+        : Promise.resolve(false),
+    ]);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -112,27 +132,36 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <ProductTitle name={product.name} size="page" />
             </h1>
 
-            {product.reviewCount > 0 && (
-              <div className="mt-3 flex items-center gap-3">
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`h-4 w-4 ${
-                        i < Math.floor(product.rating)
-                          ? "fill-warning text-warning"
-                          : "text-border"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span className="text-sm font-medium">{product.rating}</span>
-                <span className="text-sm text-muted-foreground">
-                  ({product.reviewCount} reviews)
-                </span>
+            <a
+              href="#reviews"
+              className="mt-3 inline-flex items-center gap-3 transition-opacity hover:opacity-80"
+            >
+              <div className="flex items-center gap-1">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`h-4 w-4 ${
+                      product.reviewCount > 0 &&
+                      i < Math.floor(product.rating)
+                        ? "fill-warning text-warning"
+                        : "text-border"
+                    }`}
+                  />
+                ))}
               </div>
-            )}
-
+              {product.reviewCount > 0 ? (
+                <>
+                  <span className="text-sm font-medium">{product.rating}</span>
+                  <span className="text-sm text-muted-foreground">
+                    ({product.reviewCount} reviews)
+                  </span>
+                </>
+              ) : (
+                <span className="text-sm text-muted-foreground">
+                  No reviews yet — write the first
+                </span>
+              )}
+            </a>
             <div className="mt-6 flex items-baseline gap-3">
               <span className="font-button text-3xl font-bold text-primary">
                 {formatPrice(product.price)}
@@ -324,6 +353,24 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
           </div>
         </div>
+
+        <ProductReviews
+          productId={product.id}
+          productSlug={product.slug}
+          summary={reviewSummary}
+          reviews={reviews}
+          isLoggedIn={Boolean(session?.user)}
+          existingReview={
+            existingReview
+              ? {
+                  id: existingReview.id,
+                  rating: existingReview.rating,
+                  comment: existingReview.comment,
+                }
+              : null
+          }
+          canMarkVerified={canMarkVerified}
+        />
 
         {relatedProducts.length > 0 && (
           <div className="mt-16 border-t border-border pt-16">
