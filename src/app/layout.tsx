@@ -1,9 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { bodyFont, buttonFont, headingFont } from "@/config/fonts";
 import { siteConfig } from "@/config/site";
 import { AppProviders } from "@/providers/app-providers";
 import "./globals.css";
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  // Lets Chrome/Android resize layout when the keyboard opens (stable chat UI).
+  interactiveWidget: "resizes-content",
+};
 export const metadata: Metadata = {
   title: {
     default: `${siteConfig.name} — ${siteConfig.tagline}`,

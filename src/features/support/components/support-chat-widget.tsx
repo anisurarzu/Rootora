@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Headset, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,7 +92,7 @@ export function SupportChatWidget() {
   const [error, setError] = useState<string | null>(null);
   const [agentTyping, setAgentTyping] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [mobileShellStyle, setMobileShellStyle] = useState<CSSProperties | null>(null);
+  const [keyboardInset, setKeyboardInset] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
   const bootstrappedRef = useRef(false);
@@ -100,7 +100,6 @@ export function SupportChatWidget() {
   const lastTypingSentRef = useRef(false);
   const openRef = useRef(false);
   const lastReadRef = useRef("");
-  const bodyScrollYRef = useRef(0);
 
   useEffect(() => {
     setVisitorId(getVisitorId());
@@ -137,46 +136,22 @@ export function SupportChatWidget() {
     [markAsRead]
   );
 
-  // Freeze page scroll while chat is open (prevents iOS keyboard "jump").
+  // Soft lock page scroll only — never rewrite body position/size (breaks mobile zoom).
   useEffect(() => {
     if (!open) return;
-
-    bodyScrollYRef.current = window.scrollY;
     const { body, documentElement } = document;
-    const prev = {
-      position: body.style.position,
-      top: body.style.top,
-      left: body.style.left,
-      right: body.style.right,
-      width: body.style.width,
-      overflow: body.style.overflow,
-      touchAction: body.style.touchAction,
-      htmlOverflow: documentElement.style.overflow,
-    };
-
-    body.style.position = "fixed";
-    body.style.top = `-${bodyScrollYRef.current}px`;
-    body.style.left = "0";
-    body.style.right = "0";
-    body.style.width = "100%";
+    const prevOverflow = body.style.overflow;
+    const prevHtmlOverflow = documentElement.style.overflow;
     body.style.overflow = "hidden";
-    body.style.touchAction = "none";
     documentElement.style.overflow = "hidden";
-
     return () => {
-      body.style.position = prev.position;
-      body.style.top = prev.top;
-      body.style.left = prev.left;
-      body.style.right = prev.right;
-      body.style.width = prev.width;
-      body.style.overflow = prev.overflow;
-      body.style.touchAction = prev.touchAction;
-      documentElement.style.overflow = prev.htmlOverflow;
-      window.scrollTo(0, bodyScrollYRef.current);
+      body.style.overflow = prevOverflow;
+      documentElement.style.overflow = prevHtmlOverflow;
+      setKeyboardInset(0);
     };
   }, [open]);
 
-  // Pin chat shell to the visual viewport so the keyboard does not blow the layout.
+  // Keyboard inset only (ignore pinch-zoom scale changes that thrash layout).
   useEffect(() => {
     if (!open || typeof window === "undefined") return;
 
@@ -184,46 +159,38 @@ export function SupportChatWidget() {
 
     const update = () => {
       if (isDesktop()) {
-        setMobileShellStyle(null);
+        setKeyboardInset(0);
         return;
       }
 
       const vv = window.visualViewport;
-      const top = vv?.offsetTop ?? 0;
-      const height = vv?.height ?? window.innerHeight;
+      if (!vv || vv.scale < 0.99 || vv.scale > 1.01) {
+        setKeyboardInset(0);
+        return;
+      }
 
-      setMobileShellStyle({
-        position: "fixed",
-        top: `${top}px`,
-        left: "0px",
-        right: "0px",
-        bottom: "auto",
-        width: "100%",
-        height: `${height}px`,
-        maxHeight: `${height}px`,
-      });
+      const inset = Math.max(
+        0,
+        Math.round(window.innerHeight - vv.height - vv.offsetTop)
+      );
+      setKeyboardInset(inset > 40 ? inset : 0);
     };
 
     update();
     const vv = window.visualViewport;
     vv?.addEventListener("resize", update);
-    vv?.addEventListener("scroll", update);
     window.addEventListener("resize", update);
-    window.addEventListener("orientationchange", update);
 
     return () => {
       vv?.removeEventListener("resize", update);
-      vv?.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
-      window.removeEventListener("orientationchange", update);
-      setMobileShellStyle(null);
+      setKeyboardInset(0);
     };
   }, [open]);
 
   const scrollToBottom = useCallback(() => {
     const el = messagesRef.current;
     if (!el) return;
-    // Avoid scrollIntoView — it scrolls the page and breaks iOS keyboard layout.
     el.scrollTop = el.scrollHeight;
   }, []);
 
@@ -231,7 +198,7 @@ export function SupportChatWidget() {
     if (!open) return;
     const id = window.requestAnimationFrame(scrollToBottom);
     return () => window.cancelAnimationFrame(id);
-  }, [messages, open, agentTyping, scrollToBottom]);
+  }, [messages, open, agentTyping, keyboardInset, scrollToBottom]);
 
   const bootstrap = useCallback(async (opts?: { silent?: boolean }) => {
     if (!visitorId) return;
@@ -424,16 +391,21 @@ export function SupportChatWidget() {
   return (
     <div
       className={cn(
-        "pointer-events-none z-[90] overflow-visible",
+        "pointer-events-none z-[90]",
         open
           ? "fixed inset-0 md:inset-auto md:bottom-6 md:right-6"
           : "fixed bottom-5 right-3 md:bottom-6 md:right-4"
       )}
-      style={open ? (mobileShellStyle ?? undefined) : undefined}
     >
       {open ? (
-        <div className="pointer-events-auto flex h-full w-full flex-col overflow-hidden bg-white md:h-[min(32rem,70vh)] md:w-[22rem] md:rounded-xl md:border md:border-border md:shadow-2xl">
-          <div className="flex shrink-0 items-center justify-between bg-primary px-4 py-3 text-primary-foreground">
+        <div
+          className="pointer-events-auto flex h-dvh max-h-dvh w-full max-w-[100vw] flex-col overflow-hidden overscroll-none bg-white touch-pan-y md:h-[min(32rem,70vh)] md:max-h-none md:w-[22rem] md:max-w-none md:rounded-xl md:border md:border-border md:shadow-2xl"
+          style={
+            keyboardInset > 0
+              ? { paddingBottom: keyboardInset }
+              : undefined
+          }
+        >          <div className="flex shrink-0 items-center justify-between bg-primary px-4 py-3 text-primary-foreground">
             <div>
               <p className="font-button text-sm font-semibold">ROOTORA Support</p>
               <p className="text-[11px] text-primary-foreground/80">
