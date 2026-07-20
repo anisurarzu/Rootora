@@ -92,9 +92,9 @@ export function SupportChatWidget() {
   const [error, setError] = useState<string | null>(null);
   const [agentTyping, setAgentTyping] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [keyboardInset, setKeyboardInset] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
   const bootstrappedRef = useRef(false);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingSentRef = useRef(false);
@@ -136,7 +136,7 @@ export function SupportChatWidget() {
     [markAsRead]
   );
 
-  // Soft lock page scroll only — never rewrite body position/size (breaks mobile zoom).
+  // Soft scroll lock only — do not rewrite body geometry.
   useEffect(() => {
     if (!open) return;
     const { body, documentElement } = document;
@@ -147,44 +147,69 @@ export function SupportChatWidget() {
     return () => {
       body.style.overflow = prevOverflow;
       documentElement.style.overflow = prevHtmlOverflow;
-      setKeyboardInset(0);
     };
   }, [open]);
 
-  // Keyboard inset only (ignore pinch-zoom scale changes that thrash layout).
+  /**
+   * Messenger-style frame: keep chat inside the visual viewport above the keyboard.
+   * Updates DOM styles directly (no React re-renders). Ignores pinch-zoom scale.
+   * A separate full-bleed white backdrop always covers the shop behind.
+   */
   useEffect(() => {
     if (!open || typeof window === "undefined") return;
 
+    const frame = frameRef.current;
+    if (!frame) return;
+
     const isDesktop = () => window.matchMedia("(min-width: 768px)").matches;
 
-    const update = () => {
+    const clearMobileFrame = () => {
+      frame.style.top = "";
+      frame.style.left = "";
+      frame.style.right = "";
+      frame.style.bottom = "";
+      frame.style.width = "";
+      frame.style.height = "";
+      frame.style.maxHeight = "";
+    };
+
+    const sync = () => {
       if (isDesktop()) {
-        setKeyboardInset(0);
+        clearMobileFrame();
         return;
       }
 
       const vv = window.visualViewport;
-      if (!vv || vv.scale < 0.99 || vv.scale > 1.01) {
-        setKeyboardInset(0);
+      if (vv && Math.abs(vv.scale - 1) > 0.02) {
+        // Pinch zoom — leave last good frame so layout does not thrash.
         return;
       }
 
-      const inset = Math.max(
-        0,
-        Math.round(window.innerHeight - vv.height - vv.offsetTop)
-      );
-      setKeyboardInset(inset > 40 ? inset : 0);
+      const top = vv?.offsetTop ?? 0;
+      const height = vv?.height ?? window.innerHeight;
+
+      frame.style.top = `${top}px`;
+      frame.style.left = "0px";
+      frame.style.right = "0px";
+      frame.style.bottom = "auto";
+      frame.style.width = "100%";
+      frame.style.height = `${height}px`;
+      frame.style.maxHeight = `${height}px`;
     };
 
-    update();
+    sync();
     const vv = window.visualViewport;
-    vv?.addEventListener("resize", update);
-    window.addEventListener("resize", update);
+    vv?.addEventListener("resize", sync);
+    vv?.addEventListener("scroll", sync);
+    window.addEventListener("resize", sync);
+    window.addEventListener("orientationchange", sync);
 
     return () => {
-      vv?.removeEventListener("resize", update);
-      window.removeEventListener("resize", update);
-      setKeyboardInset(0);
+      vv?.removeEventListener("resize", sync);
+      vv?.removeEventListener("scroll", sync);
+      window.removeEventListener("resize", sync);
+      window.removeEventListener("orientationchange", sync);
+      clearMobileFrame();
     };
   }, [open]);
 
@@ -198,7 +223,7 @@ export function SupportChatWidget() {
     if (!open) return;
     const id = window.requestAnimationFrame(scrollToBottom);
     return () => window.cancelAnimationFrame(id);
-  }, [messages, open, agentTyping, keyboardInset, scrollToBottom]);
+  }, [messages, open, agentTyping, scrollToBottom]);
 
   const bootstrap = useCallback(async (opts?: { silent?: boolean }) => {
     if (!visitorId) return;
@@ -389,240 +414,252 @@ export function SupportChatWidget() {
   const showConnecting = loading && messages.length === 0;
 
   return (
-    <div
-      className={cn(
-        "pointer-events-none z-[90]",
-        open
-          ? "fixed inset-0 md:inset-auto md:bottom-6 md:right-6"
-          : "fixed bottom-5 right-3 md:bottom-6 md:right-4"
-      )}
-    >
+    <>
+      {/* Full-bleed opaque shield — shop products must never peek through on mobile. */}
       {open ? (
         <div
-          className="pointer-events-auto flex h-dvh max-h-dvh w-full max-w-[100vw] flex-col overflow-hidden overscroll-none bg-white touch-pan-y md:h-[min(32rem,70vh)] md:max-h-none md:w-[22rem] md:max-w-none md:rounded-xl md:border md:border-border md:shadow-2xl"
-          style={
-            keyboardInset > 0
-              ? { paddingBottom: keyboardInset }
-              : undefined
-          }
-        >          <div className="flex shrink-0 items-center justify-between bg-primary px-4 py-3 text-primary-foreground">
-            <div>
-              <p className="font-button text-sm font-semibold">ROOTORA Support</p>
-              <p className="text-[11px] text-primary-foreground/80">
-                {status === "BOT"
-                  ? "Auto assistant online"
-                  : status === "WAITING_AGENT"
-                    ? "Waiting for an agent…"
-                    : status === "ACTIVE"
-                      ? "Agent connected"
-                      : "Chat"}
-              </p>
-            </div>
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
-              onClick={() => setOpen(false)}
-              aria-label="Close chat"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-
-          <div
-            ref={messagesRef}
-            className="min-h-0 flex-1 space-y-2.5 overflow-y-auto overscroll-contain bg-muted/20 p-3"
-          >
-            {showConnecting ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                Connecting…
-              </p>
-            ) : (
-              <>
-                {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={cn(
-                      "max-w-[85%] rounded-lg px-3 py-2 text-sm leading-relaxed",
-                      msg.sender === "VISITOR"
-                        ? "ml-auto bg-primary text-primary-foreground"
-                        : msg.sender === "AGENT"
-                          ? "bg-emerald-50 text-heading ring-1 ring-emerald-100"
-                          : "bg-white text-heading shadow-sm ring-1 ring-border/60"
-                    )}
-                  >
-                    {msg.sender !== "VISITOR" ? (
-                      <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                        {msg.sender === "AGENT" ? "Support" : "Assistant"}
-                      </p>
-                    ) : null}
-                    <p className="whitespace-pre-wrap">{msg.body}</p>
-                  </div>
-                ))}
-                {agentTyping ? <TypingDots label="Support is typing" /> : null}
-              </>
-            )}
-            <div ref={bottomRef} />
-          </div>
-
-          {needsEmail && showEmailForm ? (
-            <div className="shrink-0 space-y-2 border-t border-border bg-amber-50/80 p-3">
-              <p className="text-xs font-medium text-heading">
-                Share your email to talk with our support team
-              </p>
-              <Input
-                placeholder="Your name (optional)"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="h-9 bg-white"
-              />
-              <Input
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="h-9 bg-white"
-                required
-              />
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  className="flex-1"
-                  disabled={sending || !email.trim()}
-                  onClick={() => void submitEmail()}
-                >
-                  Continue with email
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setShowEmailForm(false)}
-                >
-                  Later
-                </Button>
-              </div>
-            </div>
-          ) : null}
-
-          {error ? (
-            <p className="shrink-0 border-t border-destructive/20 bg-destructive/5 px-3 py-1.5 text-xs text-destructive">
-              {error}
-            </p>
-          ) : null}
-
-          <div className="shrink-0 border-t border-border bg-white p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-            {needsEmail && !showEmailForm ? (
-              <button
-                type="button"
-                onClick={() => setShowEmailForm(true)}
-                className="mb-2 w-full rounded-md bg-muted px-2 py-1.5 text-left text-[11px] text-muted-foreground hover:bg-muted/80"
-              >
-                Talk to a human? Tap here to share your email →
-              </button>
-            ) : null}
-            <form
-              className="flex gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void sendMessage();
-              }}
-            >
-              <Input
-                value={draft}
-                onChange={(e) => onDraftChange(e.target.value)}
-                placeholder="Type a message…"
-                className="h-10"
-                disabled={sending}
-                maxLength={2000}
-                enterKeyHint="send"
-                autoComplete="off"
-                onFocus={() => {
-                  window.setTimeout(scrollToBottom, 50);
-                  window.setTimeout(scrollToBottom, 300);
-                }}
-              />
-              <Button
-                type="submit"
-                size="icon"
-                className="h-10 w-10 shrink-0"
-                disabled={sending || !draft.trim()}
-                aria-label="Send message"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </form>
-          </div>
-        </div>
+          className="fixed inset-0 z-[90] bg-white md:hidden"
+          aria-hidden
+        />
       ) : null}
 
-      {!open ? (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label={
-            unreadCount > 0
-              ? `Open support chat, ${unreadCount} unread`
-              : "Open support chat"
-          }
-          className="pointer-events-auto group relative overflow-visible rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-        >
-          <span className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-visible">
-            <span
-              aria-hidden
-              className={cn(
-                "support-fab-ring absolute inset-0 rounded-full border border-primary/35",
-                unreadCount > 0 && "border-red-400/50"
-              )}
-            />
-            <span
-              aria-hidden
-              className={cn(
-                "support-fab-ring-delay absolute inset-0 rounded-full border border-primary/25",
-                unreadCount > 0 && "border-red-400/40"
-              )}
-            />
-            <span
-              className={cn(
-                "relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-primary text-primary-foreground shadow-lift transition duration-300",
-                "bg-[linear-gradient(145deg,color-mix(in_oklab,var(--primary)_88%,white),var(--primary)_55%,color-mix(in_oklab,var(--primary)_82%,black))]",
-                "group-hover:scale-[1.04] group-hover:shadow-[0_16px_40px_-10px_rgb(53_94_59_/_0.45)]",
-                "group-active:scale-[0.98]",
-                unreadCount > 0 && "ring-2 ring-red-400 ring-offset-2 ring-offset-background"
-              )}
+      <div
+        className={cn(
+          "pointer-events-none z-[91]",
+          open
+            ? "fixed inset-0 md:inset-auto md:bottom-6 md:right-6"
+            : "fixed bottom-5 right-3 md:bottom-6 md:right-4"
+        )}
+      >
+        {open ? (
+          <div
+            ref={frameRef}
+            className="pointer-events-auto flex h-[100dvh] w-full max-w-[100vw] flex-col overflow-hidden overscroll-none bg-white touch-pan-y md:h-[min(32rem,70vh)] md:max-h-none md:w-[22rem] md:max-w-none md:rounded-xl md:border md:border-border md:shadow-2xl"
+          >
+            <div className="flex shrink-0 items-center justify-between bg-primary px-4 py-3 text-primary-foreground">
+              <div>
+                <p className="font-button text-sm font-semibold">
+                  ROOTORA Support
+                </p>
+                <p className="text-[11px] text-primary-foreground/80">
+                  {status === "BOT"
+                    ? "Auto assistant online"
+                    : status === "WAITING_AGENT"
+                      ? "Waiting for an agent…"
+                      : status === "ACTIVE"
+                        ? "Agent connected"
+                        : "Chat"}
+                </p>
+              </div>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
+                onClick={() => setOpen(false)}
+                aria-label="Close chat"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div
+              ref={messagesRef}
+              className="min-h-0 flex-1 space-y-2.5 overflow-y-auto overscroll-contain bg-muted p-3"
             >
-              <span className="support-fab-float relative flex items-center justify-center">
-                <Headset className="h-6 w-6" strokeWidth={1.75} />
+              {showConnecting ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  Connecting…
+                </p>
+              ) : (
+                <>
+                  {messages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={cn(
+                        "max-w-[85%] rounded-lg px-3 py-2 text-sm leading-relaxed",
+                        msg.sender === "VISITOR"
+                          ? "ml-auto bg-primary text-primary-foreground"
+                          : msg.sender === "AGENT"
+                            ? "bg-emerald-50 text-heading ring-1 ring-emerald-100"
+                            : "bg-white text-heading shadow-sm ring-1 ring-border/60"
+                      )}
+                    >
+                      {msg.sender !== "VISITOR" ? (
+                        <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          {msg.sender === "AGENT" ? "Support" : "Assistant"}
+                        </p>
+                      ) : null}
+                      <p className="whitespace-pre-wrap">{msg.body}</p>
+                    </div>
+                  ))}
+                  {agentTyping ? (
+                    <TypingDots label="Support is typing" />
+                  ) : null}
+                </>
+              )}
+              <div ref={bottomRef} />
+            </div>
+
+            {needsEmail && showEmailForm ? (
+              <div className="shrink-0 space-y-2 border-t border-border bg-amber-50 p-3">
+                <p className="text-xs font-medium text-heading">
+                  Share your email to talk with our support team
+                </p>
+                <Input
+                  placeholder="Your name (optional)"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="h-9 bg-white"
+                />
+                <Input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="h-9 bg-white"
+                  required
+                />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="flex-1"
+                    disabled={sending || !email.trim()}
+                    onClick={() => void submitEmail()}
+                  >
+                    Continue with email
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setShowEmailForm(false)}
+                  >
+                    Later
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+
+            {error ? (
+              <p className="shrink-0 border-t border-destructive/20 bg-destructive/5 px-3 py-1.5 text-xs text-destructive">
+                {error}
+              </p>
+            ) : null}
+
+            <div className="shrink-0 border-t border-border bg-white p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+              {needsEmail && !showEmailForm ? (
+                <button
+                  type="button"
+                  onClick={() => setShowEmailForm(true)}
+                  className="mb-2 w-full rounded-md bg-muted px-2 py-1.5 text-left text-[11px] text-muted-foreground hover:bg-muted/80"
+                >
+                  Talk to a human? Tap here to share your email →
+                </button>
+              ) : null}
+              <form
+                className="flex gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void sendMessage();
+                }}
+              >
+                <Input
+                  value={draft}
+                  onChange={(e) => onDraftChange(e.target.value)}
+                  placeholder="Type a message…"
+                  className="h-10 bg-white"
+                  disabled={sending}
+                  maxLength={2000}
+                  enterKeyHint="send"
+                  autoComplete="off"
+                  onFocus={() => {
+                    window.setTimeout(scrollToBottom, 50);
+                    window.setTimeout(scrollToBottom, 300);
+                  }}
+                />
+                <Button
+                  type="submit"
+                  size="icon"
+                  className="h-10 w-10 shrink-0"
+                  disabled={sending || !draft.trim()}
+                  aria-label="Send message"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </form>
+            </div>
+          </div>
+        ) : null}
+
+        {!open ? (
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label={
+              unreadCount > 0
+                ? `Open support chat, ${unreadCount} unread`
+                : "Open support chat"
+            }
+            className="pointer-events-auto group relative overflow-visible rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          >
+            <span className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-visible">
+              <span
+                aria-hidden
+                className={cn(
+                  "support-fab-ring absolute inset-0 rounded-full border border-primary/35",
+                  unreadCount > 0 && "border-red-400/50"
+                )}
+              />
+              <span
+                aria-hidden
+                className={cn(
+                  "support-fab-ring-delay absolute inset-0 rounded-full border border-primary/25",
+                  unreadCount > 0 && "border-red-400/40"
+                )}
+              />
+              <span
+                className={cn(
+                  "relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-primary text-primary-foreground shadow-lift transition duration-300",
+                  "bg-[linear-gradient(145deg,color-mix(in_oklab,var(--primary)_88%,white),var(--primary)_55%,color-mix(in_oklab,var(--primary)_82%,black))]",
+                  "group-hover:scale-[1.04] group-hover:shadow-[0_16px_40px_-10px_rgb(53_94_59_/_0.45)]",
+                  "group-active:scale-[0.98]",
+                  unreadCount > 0 &&
+                    "ring-2 ring-red-400 ring-offset-2 ring-offset-background"
+                )}
+              >
+                <span className="support-fab-float relative flex items-center justify-center">
+                  <Headset className="h-6 w-6" strokeWidth={1.75} />
+                  <span
+                    aria-hidden
+                    className="absolute -bottom-0.5 -right-1.5 flex h-4 w-[1.15rem] items-center justify-center gap-[2px] rounded-full bg-white px-[3px] shadow-sm"
+                  >
+                    <span className="support-fab-dot h-[3px] w-[3px] rounded-full bg-primary [animation-delay:0ms]" />
+                    <span className="support-fab-dot h-[3px] w-[3px] rounded-full bg-primary [animation-delay:160ms]" />
+                    <span className="support-fab-dot h-[3px] w-[3px] rounded-full bg-primary [animation-delay:320ms]" />
+                  </span>
+                </span>
                 <span
                   aria-hidden
-                  className="absolute -bottom-0.5 -right-1.5 flex h-4 w-[1.15rem] items-center justify-center gap-[2px] rounded-full bg-white px-[3px] shadow-sm"
+                  className="absolute bottom-1.5 left-1.5 h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_0_2px_var(--primary)]"
                 >
-                  <span className="support-fab-dot h-[3px] w-[3px] rounded-full bg-primary [animation-delay:0ms]" />
-                  <span className="support-fab-dot h-[3px] w-[3px] rounded-full bg-primary [animation-delay:160ms]" />
-                  <span className="support-fab-dot h-[3px] w-[3px] rounded-full bg-primary [animation-delay:320ms]" />
+                  <span className="absolute inset-0 animate-ping rounded-full bg-emerald-300/80" />
                 </span>
               </span>
-              <span
-                aria-hidden
-                className="absolute bottom-1.5 left-1.5 h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_0_2px_var(--primary)]"
-              >
-                <span className="absolute inset-0 animate-ping rounded-full bg-emerald-300/80" />
-              </span>
-            </span>
 
-            {unreadCount > 0 ? (
-              <span
-                className="absolute right-0 top-0 z-20 flex h-5 min-w-5 -translate-y-1/4 translate-x-1/4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white shadow-md ring-2 ring-white"
-                aria-hidden
-              >
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            ) : null}
-          </span>
-        </button>
-      ) : null}
-    </div>
+              {unreadCount > 0 ? (
+                <span
+                  className="absolute right-0 top-0 z-20 flex h-5 min-w-5 -translate-y-1/4 translate-x-1/4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white shadow-md ring-2 ring-white"
+                  aria-hidden
+                >
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              ) : null}
+            </span>
+          </button>
+        ) : null}
+      </div>
+    </>
   );
 }
