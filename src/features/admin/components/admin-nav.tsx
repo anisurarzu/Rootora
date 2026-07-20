@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Briefcase,
   FolderTree,
   LayoutDashboard,
   MessageCircle,
@@ -21,6 +22,7 @@ const navItems = [
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/support", label: "Support", icon: MessageCircle },
+  { href: "/admin/careers", label: "Careers", icon: Briefcase },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/categories", label: "Categories", icon: FolderTree },
   { href: "/admin/farmers", label: "Farmers", icon: Sprout },

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { ConfirmDialog } from "@/features/admin/products/components/confirm-dialog";
 import {
   closeSupportConversation,
   deleteSupportChat,
@@ -70,6 +71,7 @@ export function AdminSupportInbox({
   const [draft, setDraft] = useState("");
   const [pending, startTransition] = useTransition();
   const [visitorTyping, setVisitorTyping] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingSentRef = useRef(false);
@@ -206,10 +208,6 @@ export function AdminSupportInbox({
 
   const deleteChat = () => {
     if (!selectedId) return;
-    const ok = window.confirm(
-      "Delete this conversation permanently? This cannot be undone."
-    );
-    if (!ok) return;
 
     startTransition(async () => {
       const result = await deleteSupportChat(selectedId);
@@ -218,6 +216,7 @@ export function AdminSupportInbox({
         return;
       }
       toast.success("Conversation deleted");
+      setConfirmDeleteOpen(false);
       setDetail(null);
       setSelectedId("");
       router.push("/admin/support");
@@ -310,7 +309,7 @@ export function AdminSupportInbox({
                   variant="outline"
                   disabled={pending}
                   className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={deleteChat}
+                  onClick={() => setConfirmDeleteOpen(true)}
                 >
                   <Trash2 className="mr-1 h-3.5 w-3.5" />
                   Delete
@@ -375,6 +374,17 @@ export function AdminSupportInbox({
           </>
         )}
       </section>
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title="Delete conversation?"
+        description="This permanently deletes the chat and all messages. This cannot be undone."
+        confirmLabel="Delete conversation"
+        tone="danger"
+        loading={pending}
+        onConfirm={deleteChat}
+      />
     </div>
   );
 }

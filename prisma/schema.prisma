@@ -544,6 +544,14 @@ enum SupportMessageSender {
   AGENT
 }
 
+enum CareerApplicationStatus {
+  NEW
+  REVIEWED
+  SHORTLISTED
+  REJECTED
+  HIRED
+}
+
 /// Customer support chat conversation (guest or logged-in).
 model SupportConversation {
   id              String                     @id @default(cuid())
@@ -579,4 +587,29 @@ model SupportMessage {
   @@index([conversationId, createdAt])
   @@index([agentUserId])
   @@map("support_messages")
+}
+
+/// Public career applications from /careers
+model CareerApplication {
+  id              String                  @id @default(cuid())
+  positionSlug    String
+  positionTitle   String
+  fullName        String
+  email           String
+  phone           String
+  city            String?
+  education       String?
+  facebookUrl     String?
+  instagramUrl    String?
+  about           String                  @db.Text
+  availability    String?
+  status          CareerApplicationStatus @default(NEW)
+  adminNote       String?                 @db.Text
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  @@index([status, createdAt])
+  @@index([positionSlug, createdAt])
+  @@index([email])
+  @@map("career_applications")
 }

@@ -372,7 +372,7 @@ export function SupportChatWidget() {
         "pointer-events-none z-[90] overflow-visible",
         open
           ? "fixed inset-0 md:inset-auto md:bottom-6 md:right-6"
-          : "fixed bottom-5 right-5 md:bottom-6 md:right-6"
+          : "fixed bottom-5 right-3 md:bottom-6 md:right-4"
       )}
     >
       {open ? (
@@ -542,7 +542,7 @@ export function SupportChatWidget() {
               ? `Open support chat, ${unreadCount} unread`
               : "Open support chat"
           }
-          className="pointer-events-auto group relative flex items-center gap-2.5 overflow-visible rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className="pointer-events-auto group relative overflow-visible rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           <span className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-visible">
             <span
@@ -595,17 +595,6 @@ export function SupportChatWidget() {
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             ) : null}
-          </span>
-
-          <span className="hidden overflow-hidden rounded-full border border-primary/15 bg-white/95 py-2.5 pl-3.5 pr-4 text-left shadow-soft backdrop-blur-sm transition duration-300 group-hover:border-primary/25 group-hover:shadow-lift sm:block">
-            <span className="block font-button text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-              Support
-            </span>
-            <span className="block text-xs text-muted-foreground">
-              {unreadCount > 0
-                ? `${unreadCount > 9 ? "9+" : unreadCount} new message${unreadCount === 1 ? "" : "s"}`
-                : "We are online"}
-            </span>
           </span>
         </button>
       ) : null}
