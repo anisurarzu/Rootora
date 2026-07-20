@@ -95,7 +95,7 @@ export function ProductShowcase({
         >
           <ProductGrid compact={compact}>
             {products.map((product, index) => (
-              <motion.div key={product.id} variants={fadeInUp}>
+              <motion.div key={product.id} variants={fadeInUp} className="h-full">
                 <ProductCard product={product} priority={index < 3} />
               </motion.div>
             ))}

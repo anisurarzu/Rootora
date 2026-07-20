@@ -25,7 +25,6 @@ export default async function HomePage() {
     heroContent,
     categories,
     seasonalProducts,
-    freshToday,
     bestSellers,
     organicProducts,
     flashSaleProducts,
@@ -33,7 +32,6 @@ export default async function HomePage() {
     getHeroContent(),
     getStorefrontCategories({ onlyWithProducts: true }),
     getStorefrontProductsByFlag("seasonal"),
-    getStorefrontProductsByFlag("freshToday"),
     getStorefrontProductsByFlag("bestSeller"),
     getStorefrontProductsByFlag("organic", 4),
     getStorefrontSaleProducts(6),
@@ -81,17 +79,6 @@ export default async function HomePage() {
           description="Limited-time offerings at the peak of their season."
           products={seasonalProducts}
           viewAllHref="/collections/seasonal"
-        />
-      )}
-
-      {freshToday.length > 0 && (
-        <ProductShowcase
-          id="fresh-today"
-          eyebrow="Fresh Today"
-          title="Harvested This Morning"
-          description="Farm-fresh produce delivered within hours of harvest."
-          products={freshToday}
-          viewAllHref="/shop?filter=fresh-today"
         />
       )}
 
