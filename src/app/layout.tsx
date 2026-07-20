@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { getTheme } from "@teispace/next-themes/server";
 import { bodyFont, buttonFont, headingFont } from "@/config/fonts";
 import { siteConfig } from "@/config/site";
 import { AppProviders } from "@/providers/app-providers";
@@ -51,11 +52,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const initialTheme = await getTheme({ cookieName: "theme" });
+
   return (
     <html
       lang="en"
@@ -63,7 +66,7 @@ export default function RootLayout({
       className={`${headingFont.variable} ${bodyFont.variable} ${buttonFont.variable} h-full`}
     >
       <body className="min-h-full flex flex-col font-body antialiased">
-        <AppProviders>{children}</AppProviders>
+        <AppProviders initialTheme={initialTheme}>{children}</AppProviders>
       </body>
     </html>
   );

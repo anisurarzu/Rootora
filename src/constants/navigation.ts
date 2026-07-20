@@ -1,49 +1,71 @@
 import type { NavItem } from "@/types";
 
 export const NAV_ITEMS: NavItem[] = [
+  { label: "Home", href: "/" },
   {
     label: "Shop",
     href: "/shop",
     children: [
-      { label: "All Products", href: "/shop" },
-      { label: "Traditional Clothing", href: "/shop?category=traditional-clothing" },
-      { label: "T-shirt", href: "/shop?category=t-shirt" },
-      { label: "Honey", href: "/shop?category=honey" },
-      { label: "Organic Foods", href: "/shop?filter=organic" },
+      {
+        label: "Honey",
+        href: "/shop?category=honey",
+        description: "Forest & flower honey, pure and traceable.",
+        image: "/images/categories/organic-honey.png",
+        icon: "droplets",
+        featured: true,
+      },
+      {
+        label: "Organic Food",
+        href: "/shop?filter=organic",
+        description: "Clean staples from trusted Bangladeshi farms.",
+        image: "/images/categories/organic-foods.png",
+        icon: "leaf",
+        featured: true,
+      },
+      {
+        label: "Traditional Sweets",
+        href: "/shop?q=sweets",
+        description: "Heritage mishti for everyday and celebration.",
+        image: "/images/categories/heritage-sweets.png",
+        icon: "candy",
+      },
+      {
+        label: "Fashion",
+        href: "/shop?category=traditional-clothing",
+        description: "Panjabi, Jamdani, and modern heritage wear.",
+        image: "/images/traditional-clothing-v2.png",
+        icon: "shirt",
+      },
+      {
+        label: "Handicrafts",
+        href: "/collections/handmade",
+        description: "Artisan-made pieces with lasting character.",
+        image: "/images/categories/gift-boxes.png",
+        icon: "sparkles",
+      },
     ],
   },
-  {
-    label: "Collections",
-    href: "/collections",
-    children: [
-      { label: "Organic Collection", href: "/collections/organic", featured: true },
-      { label: "Seasonal Picks", href: "/collections/seasonal", featured: true },
-      { label: "Gift Boxes", href: "/collections/gift-boxes" },
-      { label: "Festival Collection", href: "/collections/festival" },
-      { label: "Traditional Clothing", href: "/collections/clothing" },
-      { label: "Handmade Products", href: "/collections/handmade" },
-    ],
-  },
-  { label: "Farmers", href: "/farmers" },
-  { label: "Track Order", href: "/track-order" },
-  { label: "Recipes", href: "/recipes" },
   { label: "Blog", href: "/blog" },
+  { label: "Farmers", href: "/farmers" },
+  { label: "About", href: "/about" },
+  { label: "Contact", href: "/contact" },
 ];
 
 export const FOOTER_LINKS = {
+  quick: [
+    { label: "Home", href: "/" },
+    { label: "Shop", href: "/shop" },
+    { label: "Collections", href: "/collections" },
+    { label: "Blog", href: "/blog" },
+    { label: "Farmers", href: "/farmers" },
+  ],
   shop: [
     { label: "All Products", href: "/shop" },
+    { label: "Honey", href: "/shop?category=honey" },
     { label: "Organic Foods", href: "/shop?filter=organic" },
-    { label: "Fresh Produce", href: "/shop?category=seasonal-fruits" },
-    { label: "Gift Boxes", href: "/collections/gift-boxes" },
-    { label: "New Arrivals", href: "/shop?sort=newest" },
-  ],
-  company: [
-    { label: "About Us", href: "/about" },
-    { label: "Our Farmers", href: "/farmers" },
-    { label: "Sustainability", href: "/sustainability" },
-    { label: "Careers", href: "/careers" },
-    { label: "Contact", href: "/contact" },
+    { label: "Traditional Sweets", href: "/shop?q=sweets" },
+    { label: "Fashion", href: "/shop?category=traditional-clothing" },
+    { label: "Handicrafts", href: "/collections/handmade" },
   ],
   support: [
     { label: "Help Center", href: "/help" },
@@ -51,6 +73,13 @@ export const FOOTER_LINKS = {
     { label: "Returns", href: "/returns" },
     { label: "Track Order", href: "/track-order" },
     { label: "FAQs", href: "/faqs" },
+  ],
+  company: [
+    { label: "About Us", href: "/about" },
+    { label: "Our Farmers", href: "/farmers" },
+    { label: "Sustainability", href: "/sustainability" },
+    { label: "Careers", href: "/careers" },
+    { label: "Contact", href: "/contact" },
   ],
   legal: [
     { label: "Privacy Policy", href: "/privacy" },

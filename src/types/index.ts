@@ -112,6 +112,10 @@ export interface NavItem {
   href: string;
   children?: NavItem[];
   featured?: boolean;
+  description?: string;
+  image?: string;
+  /** Lucide icon key used by mobile / mega menu */
+  icon?: string;
 }
 
 export interface CartItem {
