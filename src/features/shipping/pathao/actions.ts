@@ -129,7 +129,7 @@ export async function createPathaoShipmentAction(input: z.infer<typeof shipSchem
 
   const itemQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0);
   const itemDescription = order.items
-    .map((item) => `${item.product.name} x${item.quantity}`)
+    .map((item) => `${item.product?.name ?? "Product"} x${item.quantity}`)
     .join(", ")
     .slice(0, 240);
 

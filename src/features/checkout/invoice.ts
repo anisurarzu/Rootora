@@ -46,7 +46,7 @@ function serializeInvoiceOrder(order: {
       name: string;
       sku: string | null;
       unit: string | null;
-    };
+    } | null;
   }>;
 }): InvoiceOrder {
   return {
@@ -84,9 +84,9 @@ function serializeInvoiceOrder(order: {
       quantity: item.quantity,
       price: Number(item.price),
       product: {
-        name: item.product.name,
-        sku: item.product.sku,
-        unit: item.product.unit,
+        name: item.product?.name ?? "Unavailable product",
+        sku: item.product?.sku ?? null,
+        unit: item.product?.unit ?? null,
       },
     })),
   };

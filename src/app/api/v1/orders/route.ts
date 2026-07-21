@@ -61,13 +61,15 @@ export async function GET(request: Request) {
           productId: item.productId,
           quantity: item.quantity,
           price: Number(item.price),
-          product: {
-            id: item.product.id,
-            name: item.product.name,
-            slug: item.product.slug,
-            image:
-              item.product.thumbnail || item.product.images[0] || null,
-          },
+          product: item.product
+            ? {
+                id: item.product.id,
+                name: item.product.name,
+                slug: item.product.slug,
+                image:
+                  item.product.thumbnail || item.product.images[0] || null,
+              }
+            : null,
         })),
         createdAt: order.createdAt.toISOString(),
         updatedAt: order.updatedAt.toISOString(),

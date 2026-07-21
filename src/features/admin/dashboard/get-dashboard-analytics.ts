@@ -182,7 +182,9 @@ export async function getDashboardAnalytics() {
     count: group._count._all,
   }));
 
-  const productIds = topProductGroups.map((group) => group.productId);
+  const productIds = topProductGroups
+    .map((group) => group.productId)
+    .filter((id): id is string => Boolean(id));
   const topProductsMeta = productIds.length
     ? await prisma.product.findMany({
         where: { id: { in: productIds } },
@@ -202,6 +204,7 @@ export async function getDashboardAnalytics() {
 
   const topProducts = topProductGroups
     .map((group) => {
+      if (!group.productId) return null;
       const product = productMap.get(group.productId);
       if (!product) return null;
       const quantitySold = group._sum.quantity ?? 0;

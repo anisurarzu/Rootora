@@ -121,10 +121,12 @@ export async function POST(request: Request) {
       itemCount: order.items.reduce((sum, item) => sum + item.quantity, 0),
       items: order.items.map((item) => ({
         id: item.id,
-        name: item.product.name,
-        slug: item.product.slug,
+        name: item.product?.name ?? "Unavailable product",
+        slug: item.product?.slug ?? null,
         quantity: item.quantity,
-        image: item.product.thumbnail || item.product.images[0] || null,
+        image: item.product
+          ? item.product.thumbnail || item.product.images[0] || null
+          : null,
       })),
       destination: {
         name: order.address.name,

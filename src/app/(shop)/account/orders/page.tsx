@@ -114,7 +114,7 @@ export default async function OrdersPage() {
                   <ul className="mb-4 space-y-1 text-sm text-muted-foreground">
                     {order.items.map((item) => (
                       <li key={item.id}>
-                        {item.quantity}× {item.product.name}
+                        {item.quantity}× {item.product?.name ?? "Unavailable product"}
                       </li>
                     ))}
                   </ul>

@@ -90,7 +90,7 @@ export default async function CheckoutSuccessPage({
               >
                 <span className="flex items-center gap-2 text-heading">
                   <Package className="h-4 w-4 text-muted-foreground" />
-                  {item.product.name}
+                  {item.product?.name ?? "Unavailable product"}
                 </span>
                 <span>
                   ×{item.quantity} ·{" "}
