@@ -246,14 +246,56 @@ export async function deleteProduct(
   await requirePermission("products.delete");
 
   try {
-    const product = await prisma.product.delete({
+    const existing = await prisma.product.findUnique({
       where: { id: productId },
-      select: { slug: true },
+      select: {
+        id: true,
+        slug: true,
+        images: true,
+        thumbnail: true,
+        hoverImage: true,
+      },
     });
-    revalidateProductPaths(product.slug);
+
+    if (!existing) {
+      return { success: false, error: "Product not found." };
+    }
+
+    await prisma.flashSaleItem.deleteMany({ where: { productId } });
+    await prisma.productVariant.deleteMany({ where: { productId } });
+
+    await prisma.product.delete({ where: { id: productId } });
+
+    const urls = [
+      ...existing.images,
+      existing.thumbnail,
+      existing.hoverImage,
+    ].filter((url): url is string => Boolean(url));
+
+    const { deleteUploadedFile } = await import("@/lib/uploads");
+    await Promise.all(
+      [...new Set(urls)].map(async (url) => {
+        try {
+          await deleteUploadedFile(url);
+        } catch (error) {
+          console.error("Failed to delete product image", url, error);
+        }
+      })
+    );
+
+    revalidateProductPaths(existing.slug);
+    revalidatePath("/");
+    revalidatePath("/admin/homepage");
     return { success: true, message: "Product deleted." };
-  } catch {
-    return { success: false, error: "Failed to delete product." };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to delete product. It may be linked to existing orders.",
+    };
   }
 }
 

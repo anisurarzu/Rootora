@@ -175,6 +175,12 @@ function AdminChromeInner({ children }: { children: React.ReactNode }) {
                 Admin
               </span>
             </Link>
+            <Link
+              href="/"
+              className="mt-3 inline-flex font-button text-sm text-white/80 transition-colors hover:text-white"
+            >
+              ← Back to store
+            </Link>
           </div>
           <div className="flex-1 overflow-y-auto p-3">
             <AdminNav
@@ -194,12 +200,20 @@ function AdminChromeInner({ children }: { children: React.ReactNode }) {
 
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="border-b border-border bg-white px-6 py-4 md:hidden">
-            <Link
-              href="/admin"
-              className="font-heading text-lg font-semibold text-primary"
-            >
-              ROOTORA Admin
-            </Link>
+            <div className="flex items-center justify-between gap-3">
+              <Link
+                href="/admin"
+                className="font-heading text-lg font-semibold text-primary"
+              >
+                ROOTORA Admin
+              </Link>
+              <Link
+                href="/"
+                className="shrink-0 font-button text-sm text-muted-foreground transition-colors hover:text-primary"
+              >
+                ← Store
+              </Link>
+            </div>
             <div className="mt-4">
               <AdminNav
                 variant="light"

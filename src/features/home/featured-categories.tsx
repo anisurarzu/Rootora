@@ -17,20 +17,20 @@ function CategoryTile({ category }: { category: Category }) {
     <Link
       href={`/shop?category=${category.slug}`}
       className={cn(
-        "group flex flex-col overflow-hidden rounded-lg border border-border/70 bg-white",
+        "group flex h-full flex-col overflow-hidden rounded-lg border border-border/70 bg-white",
         "transition-shadow duration-300 hover:shadow-soft"
       )}
     >
-      <div className="relative aspect-square bg-white p-2 sm:p-2.5">
+      <div className="relative aspect-square overflow-hidden bg-muted/30">
         <Image
           src={category.image}
           alt={category.name}
           fill
-          className="object-contain object-center transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+          className="object-cover object-center transition-transform duration-500 ease-out group-hover:scale-[1.03]"
           sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 15vw"
         />
       </div>
-      <div className="border-t border-border/50 px-1.5 py-2 text-center sm:px-2 sm:py-2.5">
+      <div className="flex min-h-[2.75rem] flex-1 items-center justify-center border-t border-border/50 px-1.5 py-2 text-center sm:min-h-[3.25rem] sm:px-2 sm:py-2.5">
         <h3 className="line-clamp-2 font-heading text-[11px] font-semibold leading-tight text-heading sm:text-sm">
           {category.name}
         </h3>

@@ -401,13 +401,13 @@ model OrderStatusEvent {
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   orderId   String
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
   quantity  Int
-  price     Decimal @db.Decimal(10, 2)
+  price     Decimal  @db.Decimal(10, 2)
   variantId String?
 
   @@map("order_items")
