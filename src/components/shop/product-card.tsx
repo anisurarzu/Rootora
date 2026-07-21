@@ -58,7 +58,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
   return (
     <article
       className={cn(
-        "group relative flex h-full w-full flex-col overflow-hidden rounded-lg border border-border/80 bg-white",
+        "group relative flex h-full w-full flex-col overflow-hidden rounded-sm border border-border/80 bg-white",
         "transition-[border-color,box-shadow] duration-300 ease-out",
         "hover:border-border hover:shadow-soft",
         !product.inStock && "opacity-85",
