@@ -1,16 +1,41 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { ActionResult } from "@/features/admin/types";
 import { requireSession } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 
-export async function updateProfile(formData: FormData) {
+export async function updateProfile(formData: FormData): Promise<ActionResult> {
   const session = await requireSession();
   const name = String(formData.get("name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
+  const imageRaw = String(formData.get("image") ?? "").trim();
 
   if (!name) {
-    return;
+    return { success: false, error: "Name is required." };
+  }
+
+  if (name.length > 120) {
+    return { success: false, error: "Name is too long." };
+  }
+
+  if (phone && phone.length > 32) {
+    return { success: false, error: "Phone number is too long." };
+  }
+
+  let image: string | null | undefined = undefined;
+  if (formData.has("image")) {
+    if (!imageRaw) {
+      image = null;
+    } else if (
+      imageRaw.startsWith("/uploads/avatars/") ||
+      imageRaw.startsWith("https://res.cloudinary.com/") ||
+      imageRaw.startsWith("https://lh3.googleusercontent.com/")
+    ) {
+      image = imageRaw;
+    } else {
+      return { success: false, error: "Invalid profile image." };
+    }
   }
 
   await prisma.user.update({
@@ -18,11 +43,14 @@ export async function updateProfile(formData: FormData) {
     data: {
       name,
       phone: phone || null,
+      ...(image !== undefined ? { image } : {}),
     },
   });
 
   revalidatePath("/account");
   revalidatePath("/account/profile");
+
+  return { success: true, message: "Profile updated." };
 }
 
 export async function createAddress(formData: FormData) {

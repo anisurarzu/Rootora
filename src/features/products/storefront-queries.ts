@@ -126,6 +126,7 @@ export function mapDbProductToStorefront(product: DbProduct): Product {
         : undefined,
     featured: product.featured,
     bestSeller: product.bestSeller,
+    newArrival: product.newArrival,
     freshToday: product.freshToday,
     seasonal: product.seasonal,
     variants: (product.variants ?? []).map((variant) => ({
@@ -270,6 +271,32 @@ export async function getStorefrontSaleProducts(
         product.originalPrice != null &&
         product.originalPrice > product.price
     )
+    .slice(0, limit);
+}
+
+/** Preserve the order of `ids` (for curated Flash Sale picks). */
+export async function getStorefrontProductsByIds(
+  ids: string[],
+  limit = 12
+): Promise<Product[]> {
+  if (ids.length === 0) return [];
+
+  const uniqueIds = [...new Set(ids)].slice(0, Math.max(limit * 2, limit));
+  const products = await prisma.product.findMany({
+    where: {
+      ...publishedWhere,
+      id: { in: uniqueIds },
+    },
+    include: publishedProductInclude,
+  });
+
+  const byId = new Map(
+    products.map((product) => [product.id, mapDbProductToStorefront(product)])
+  );
+
+  return uniqueIds
+    .map((id) => byId.get(id))
+    .filter((product): product is Product => Boolean(product))
     .slice(0, limit);
 }
 

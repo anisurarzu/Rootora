@@ -284,6 +284,7 @@ model Product {
   cartItems            CartItem[]
   wishlistItems        WishlistItem[]
   variants             ProductVariant[]
+  flashSaleItems       FlashSaleItem[]
 
   @@index([categoryId])
   @@index([farmerId])
@@ -540,6 +541,43 @@ model HeroSlide {
 
   @@index([heroId, sortOrder])
   @@map("hero_slides")
+}
+
+/// Homepage Flash Sale sidebar CMS (singleton id = "default").
+model FlashSaleSettings {
+  id             String         @id @default("default")
+  enabled        Boolean        @default(true)
+  title          String         @default("Flash Sale")
+  subtitle       String?
+  shopAllLabel   String         @default("Shop all")
+  shopAllHref    String         @default("/shop?filter=on-sale")
+  viewAllLabel   String         @default("View all deals")
+  viewAllHref    String         @default("/shop?filter=on-sale")
+  productLimit   Int            @default(6)
+  /// When true and no curated items, auto-fill from products with salePrice.
+  useAutoSale    Boolean        @default(true)
+  /// Optional countdown end (storefront shows timer when set & future).
+  endsAt         DateTime?
+  updatedAt      DateTime       @updatedAt
+  items          FlashSaleItem[]
+
+  @@map("flash_sale_settings")
+}
+
+model FlashSaleItem {
+  id          String            @id @default(cuid())
+  flashSaleId String            @default("default")
+  flashSale   FlashSaleSettings @relation(fields: [flashSaleId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sortOrder   Int               @default(0)
+  active      Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([flashSaleId, productId])
+  @@index([flashSaleId, sortOrder])
+  @@map("flash_sale_items")
 }
 
 enum SupportConversationStatus {

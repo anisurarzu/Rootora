@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   Heart,
   MapPin,
@@ -54,12 +55,24 @@ const quickLinks = [
   },
 ];
 
+function getInitials(name?: string | null, email?: string | null) {
+  if (name?.trim()) {
+    return name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("");
+  }
+  return email?.[0]?.toUpperCase() ?? "U";
+}
+
 export default async function AccountPage() {
   const session = await requireSession();
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { name: true, email: true, role: true },
+    select: { name: true, email: true, role: true, image: true },
   });
 
   const orderCount = await prisma.order.count({
@@ -67,36 +80,54 @@ export default async function AccountPage() {
   });
 
   const hasAdminAccess = await canAccessAdmin(user?.role ?? session.user.role);
+  const displayName = user?.name ?? session.user.name;
+  const displayEmail = user?.email ?? session.user.email;
+  const image = user?.image;
 
   return (
     <div>
-      <header className="mb-8">
-        <h1 className="font-heading text-3xl font-semibold text-heading">
-          Overview
-        </h1>
-        <p className="mt-2 text-muted-foreground">
-          Welcome back, {user?.name ?? session.user.name}.
-        </p>
+      <header className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center">
+        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border border-primary/20 bg-primary/10">
+          {image ? (
+            <Image
+              src={image}
+              alt=""
+              fill
+              className="object-cover"
+              sizes="64px"
+            />
+          ) : (
+            <span className="flex h-full w-full items-center justify-center font-heading text-xl font-semibold text-primary">
+              {getInitials(displayName, displayEmail)}
+            </span>
+          )}
+        </div>
+        <div>
+          <h1 className="font-heading text-3xl font-semibold text-heading">
+            Overview
+          </h1>
+          <p className="mt-1 text-muted-foreground">
+            Welcome back, {displayName}.
+          </p>
+        </div>
       </header>
 
       <Card className="mb-8">
         <CardHeader>
           <CardTitle>Account details</CardTitle>
-          <CardDescription>Your profile information at a glance.</CardDescription>
+          <CardDescription>
+            Your profile information at a glance.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <dl className="grid gap-4 sm:grid-cols-2">
             <div>
               <dt className="text-sm font-medium text-muted-foreground">Name</dt>
-              <dd className="mt-1 font-medium text-heading">
-                {user?.name ?? session.user.name}
-              </dd>
+              <dd className="mt-1 font-medium text-heading">{displayName}</dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-muted-foreground">Email</dt>
-              <dd className="mt-1 font-medium text-heading">
-                {user?.email ?? session.user.email}
-              </dd>
+              <dd className="mt-1 font-medium text-heading">{displayEmail}</dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-muted-foreground">Role</dt>
@@ -123,7 +154,7 @@ export default async function AccountPage() {
         </CardContent>
       </Card>
 
-      {hasAdminAccess && (
+      {hasAdminAccess ? (
         <Card className="mb-8 border-primary/20 bg-primary/5">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
@@ -140,7 +171,7 @@ export default async function AccountPage() {
             </Button>
           </CardContent>
         </Card>
-      )}
+      ) : null}
 
       <section aria-labelledby="quick-links-heading">
         <h2

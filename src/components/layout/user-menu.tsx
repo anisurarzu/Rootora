@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import {
   ClipboardList,
@@ -40,6 +41,7 @@ function getInitials(name?: string | null, email?: string | null) {
 export function UserMenu({ className }: UserMenuProps) {
   const { data: session } = useSession();
   const user = session?.user;
+  const image = user?.image;
 
   return (
     <DropdownMenu>
@@ -51,9 +53,21 @@ export function UserMenu({ className }: UserMenuProps) {
           className={cn("h-10 w-10", className)}
         >
           {user ? (
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[11px] font-bold text-primary">
-              {getInitials(user.name, user.email)}
-            </span>
+            image ? (
+              <span className="relative h-7 w-7 overflow-hidden rounded-full ring-1 ring-white/40">
+                <Image
+                  src={image}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="28px"
+                />
+              </span>
+            ) : (
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[11px] font-bold text-primary">
+                {getInitials(user.name, user.email)}
+              </span>
+            )
           ) : (
             <User className="h-5 w-5" strokeWidth={1.75} />
           )}
@@ -67,13 +81,30 @@ export function UserMenu({ className }: UserMenuProps) {
       >
         {user ? (
           <>
-            <div className="px-2 py-2">
-              <p className="truncate text-sm font-semibold text-heading">
-                {user.name || "My account"}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {user.email}
-              </p>
+            <div className="flex items-center gap-2.5 px-2 py-2">
+              {image ? (
+                <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-muted">
+                  <Image
+                    src={image}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="36px"
+                  />
+                </span>
+              ) : (
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                  {getInitials(user.name, user.email)}
+                </span>
+              )}
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-heading">
+                  {user.name || "My account"}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {user.email}
+                </p>
+              </div>
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>

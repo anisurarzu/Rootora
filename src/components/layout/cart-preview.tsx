@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { ShoppingBag } from "lucide-react";
 import {
   DropdownMenu,
@@ -18,10 +19,20 @@ type CartPreviewProps = {
 };
 
 export function CartPreview({ className, badgeClassName }: CartPreviewProps) {
+  const [ready, setReady] = useState(false);
   const items = useCartStore((s) => s.items);
   const count = useCartStore((s) => s.getItemCount());
   const subtotal = useCartStore((s) => s.getSubtotal());
-  const preview = items.slice(0, 4);
+
+  useEffect(() => {
+    setReady(true);
+  }, []);
+
+  // Persist cart hydrates after mount — keep SSR/first paint empty to avoid mismatch.
+  const safeItems = ready ? items : [];
+  const safeCount = ready ? count : 0;
+  const safeSubtotal = ready ? subtotal : 0;
+  const preview = safeItems.slice(0, 4);
 
   return (
     <DropdownMenu>
@@ -29,18 +40,18 @@ export function CartPreview({ className, badgeClassName }: CartPreviewProps) {
         <Button
           variant="ghost"
           size="icon"
-          aria-label={`Cart, ${count} items`}
+          aria-label={`Cart, ${safeCount} items`}
           className={cn("relative h-10 w-10", className)}
         >
           <ShoppingBag className="h-5 w-5" strokeWidth={1.75} />
-          {count > 0 ? (
+          {safeCount > 0 ? (
             <span
               className={cn(
                 "absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground",
                 badgeClassName
               )}
             >
-              {count}
+              {safeCount}
             </span>
           ) : null}
         </Button>
@@ -56,9 +67,9 @@ export function CartPreview({ className, badgeClassName }: CartPreviewProps) {
             Your bag
           </p>
           <p className="text-xs text-muted-foreground">
-            {count === 0
+            {safeCount === 0
               ? "No items yet"
-              : `${count} item${count === 1 ? "" : "s"}`}
+              : `${safeCount} item${safeCount === 1 ? "" : "s"}`}
           </p>
         </div>
 
@@ -112,7 +123,7 @@ export function CartPreview({ className, badgeClassName }: CartPreviewProps) {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
                 <span className="font-semibold tabular-nums text-heading">
-                  {formatPrice(subtotal)}
+                  {formatPrice(safeSubtotal)}
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-2">

@@ -85,6 +85,11 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
           <div className="absolute left-1.5 top-1.5 z-[1] flex max-w-[calc(100%-2.75rem)] flex-wrap gap-1 sm:left-2 sm:top-2">
+            {product.newArrival ? (
+              <span className="rounded-sm bg-heading px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wide text-white shadow-sm sm:text-[11px]">
+                New
+              </span>
+            ) : null}
             {hasDiscount ? (
               <span className="rounded-sm bg-gradient-to-r from-destructive to-orange-500 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white shadow-sm sm:text-[11px]">
                 -{discountPct}%

@@ -1,20 +1,26 @@
 import { NextResponse } from "next/server";
 import { getSession, userHasPermission } from "@/lib/auth-server";
-import { getUploadProvider, uploadFile } from "@/lib/uploads";
+import {
+  deleteUploadedFile,
+  getUploadProvider,
+  uploadFile,
+} from "@/lib/uploads";
 
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
+async function canManageUploads() {
   const session = await getSession();
-  const canUpload =
-    session?.user &&
-    (await userHasPermission(session.user.role, [
-      "products.create",
-      "products.edit",
-      "admin.access",
-    ]));
+  if (!session?.user) return false;
+  return userHasPermission(session.user.role, [
+    "products.create",
+    "products.edit",
+    "content.manage",
+    "admin.access",
+  ]);
+}
 
-  if (!canUpload) {
+export async function POST(request: Request) {
+  if (!(await canManageUploads())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -35,6 +41,33 @@ export async function POST(request: Request) {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Upload failed unexpectedly";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  if (!(await canManageUploads())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = (await request.json().catch(() => null)) as {
+      url?: string;
+    } | null;
+    const url = body?.url?.trim();
+
+    if (!url) {
+      return NextResponse.json(
+        { error: "Image URL is required" },
+        { status: 400 }
+      );
+    }
+
+    const result = await deleteUploadedFile(url);
+    return NextResponse.json(result);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Delete failed unexpectedly";
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

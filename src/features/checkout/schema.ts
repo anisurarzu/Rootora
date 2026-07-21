@@ -27,6 +27,15 @@ export const placeOrderInputSchema = z
     newAddress: checkoutAddressSchema.optional(),
     notes: z.string().max(500).optional(),
     saveAddress: z.boolean().optional(),
+    couponCode: z.preprocess(
+      (value) =>
+        typeof value === "string" && value.trim() === "" ? undefined : value,
+      z
+        .string()
+        .trim()
+        .max(40, "Coupon code is too long")
+        .optional()
+    ),
     guestEmail: z.preprocess(
       (value) =>
         typeof value === "string" && value.trim() === "" ? undefined : value,

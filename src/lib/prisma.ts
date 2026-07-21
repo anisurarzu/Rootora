@@ -6,7 +6,7 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 /** Bump when Prisma schema shape changes so hot reload drops stale clients. */
-const PRISMA_SCHEMA_VERSION = 15;
+const PRISMA_SCHEMA_VERSION = 17;
 
 function createPrismaClient() {
   return new PrismaClient({
@@ -17,10 +17,7 @@ function createPrismaClient() {
   });
 }
 
-function hasModel(
-  client: PrismaClient,
-  name: keyof PrismaClient & string
-): boolean {
+function hasModel(client: PrismaClient, name: string): boolean {
   const delegate = (client as unknown as Record<string, unknown>)[name];
   return Boolean(
     delegate &&
@@ -47,15 +44,21 @@ function orderHasFields(client: PrismaClient, names: string[]): boolean {
   }
 }
 
+const REQUIRED_MODELS = [
+  "role",
+  "permission",
+  "heroSettings",
+  "heroSlide",
+  "flashSaleSettings",
+  "flashSaleItem",
+  "orderStatusEvent",
+  "supportConversation",
+  "supportMessage",
+] as const;
+
 function isCurrentClient(client: PrismaClient) {
   return (
-    hasModel(client, "role") &&
-    hasModel(client, "permission") &&
-    hasModel(client, "heroSettings") &&
-    hasModel(client, "heroSlide") &&
-    hasModel(client, "orderStatusEvent") &&
-    hasModel(client, "supportConversation") &&
-    hasModel(client, "supportMessage") &&
+    REQUIRED_MODELS.every((name) => hasModel(client, name)) &&
     orderHasFields(client, ["statusCode", "pathaoConsignmentId"]) &&
     globalForPrisma.prismaSchemaVersion === PRISMA_SCHEMA_VERSION
   );
@@ -75,6 +78,15 @@ function getPrismaClient() {
 
   const client = createPrismaClient();
 
+  if (
+    !REQUIRED_MODELS.every((name) => hasModel(client, name)) &&
+    process.env.NODE_ENV !== "production"
+  ) {
+    console.error(
+      "[prisma] Generated client is missing required models (e.g. flashSaleSettings). Restart the dev server after `npx prisma generate`."
+    );
+  }
+
   // Always cache in dev so the next request can replace a stale Turbopack client.
   if (process.env.NODE_ENV !== "production") {
     globalForPrisma.prisma = client;
@@ -91,7 +103,26 @@ function getPrismaClient() {
 export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
   get(_target, prop, _receiver) {
     const client = getPrismaClient();
-    const value = Reflect.get(client, prop, client);
+    let value = Reflect.get(client, prop, client);
+
+    // Stale Node module cache: force one rebuild if a known model is missing.
+    if (
+      value === undefined &&
+      typeof prop === "string" &&
+      (REQUIRED_MODELS as readonly string[]).includes(prop)
+    ) {
+      globalForPrisma.prisma = undefined;
+      globalForPrisma.prismaSchemaVersion = undefined;
+      const refreshed = getPrismaClient();
+      value = Reflect.get(refreshed, prop, refreshed);
+      if (value === undefined) {
+        throw new Error(
+          `Prisma model "${prop}" is missing. Run \`npx prisma generate\` and restart the dev server.`
+        );
+      }
+      return typeof value === "function" ? value.bind(refreshed) : value;
+    }
+
     return typeof value === "function" ? value.bind(client) : value;
   },
 });

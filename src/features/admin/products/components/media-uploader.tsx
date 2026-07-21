@@ -41,6 +41,25 @@ async function uploadFile(file: File) {
   return data.url;
 }
 
+async function deleteUploadedMedia(url: string) {
+  const response = await fetch("/api/uploads", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+
+  const data = (await response.json()) as {
+    deleted?: boolean;
+    error?: string;
+  };
+
+  if (!response.ok) {
+    throw new Error(data.error || "Delete failed");
+  }
+
+  return data;
+}
+
 export function MediaUploader({
   value,
   onChange,
@@ -51,6 +70,7 @@ export function MediaUploader({
 }: MediaUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [deletingUrl, setDeletingUrl] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
@@ -98,6 +118,24 @@ export function MediaUploader({
     const [item] = next.splice(from, 1);
     next.splice(to, 0, item);
     onChange(next);
+  }
+
+  async function removeAt(index: number) {
+    const url = value[index];
+    if (!url) return;
+
+    setDeletingUrl(url);
+    try {
+      await deleteUploadedMedia(url);
+      onChange(value.filter((_, i) => i !== index));
+      toast.success("Image deleted.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not delete image."
+      );
+    } finally {
+      setDeletingUrl(null);
+    }
   }
 
   return (
@@ -203,10 +241,15 @@ export function MediaUploader({
                   type="button"
                   size="sm"
                   variant="ghost"
-                  onClick={() => onChange(value.filter((_, i) => i !== index))}
+                  disabled={Boolean(deletingUrl) || uploading}
+                  onClick={() => void removeAt(index)}
                   aria-label="Delete image"
                 >
-                  <Trash2 className="h-4 w-4 text-red-600" />
+                  {deletingUrl === url ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-red-600" />
+                  ) : (
+                    <Trash2 className="h-4 w-4 text-red-600" />
+                  )}
                 </Button>
               </div>
             </li>

@@ -84,10 +84,8 @@ export async function getHeroContent(): Promise<HeroContent> {
       ctaSecondaryLabel: hero.ctaSecondaryLabel,
       ctaSecondaryHref: hero.ctaSecondaryHref,
       backgroundImage: hero.backgroundImage,
-      slides:
-        activeSlides.length > 0
-          ? activeSlides
-          : DEFAULT_HERO_CONTENT.slides,
+      // Use DB slides only — never resurrect deleted defaults on the live site
+      slides: activeSlides,
     };
   } catch (error) {
     console.error("Failed to load hero content", error);

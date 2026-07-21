@@ -6,27 +6,60 @@ import type { ActionResult } from "@/features/admin/types";
 import { ensureHeroDefaults } from "@/features/home/hero";
 import { requirePermission } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
+import { deleteUploadedFile } from "@/lib/uploads";
+
+function requiredText(label: string, max: number) {
+  return z
+    .string()
+    .trim()
+    .min(1, `${label} is required`)
+    .max(max, `${label} is too long`);
+}
 
 const settingsSchema = z.object({
-  brandName: z.string().min(1).max(80),
-  tagline: z.string().min(1).max(120),
-  headline: z.string().min(1).max(160),
-  description: z.string().min(1).max(400),
-  ctaPrimaryLabel: z.string().min(1).max(60),
-  ctaPrimaryHref: z.string().min(1).max(200),
-  ctaSecondaryLabel: z.string().min(1).max(60),
-  ctaSecondaryHref: z.string().min(1).max(200),
-  backgroundImage: z.string().min(1).max(500),
+  brandName: requiredText("Brand name", 80),
+  tagline: requiredText("Tagline", 120),
+  headline: requiredText("Headline", 160),
+  description: requiredText("Description", 400),
+  ctaPrimaryLabel: requiredText("Primary CTA label", 60),
+  ctaPrimaryHref: requiredText("Primary CTA link", 200),
+  // Secondary CTA is optional on the live homepage
+  ctaSecondaryLabel: z.string().trim().max(60).default(""),
+  ctaSecondaryHref: z.string().trim().max(200).default(""),
+  backgroundImage: z
+    .string()
+    .trim()
+    .max(500)
+    .transform((value) => value || "/images/hero-produce-original.png"),
 });
 
 const slideSchema = z.object({
-  image: z.string().min(1, "Image is required"),
-  label: z.string().min(1).max(40),
-  title: z.string().min(1).max(80),
-  detail: z.string().min(1).max(120),
-  href: z.string().min(1).max(200),
+  image: z
+    .string()
+    .trim()
+    .min(1, "Please upload a campaign image before saving"),
+  href: requiredText("Link", 200),
+  label: z
+    .string()
+    .trim()
+    .max(40)
+    .transform((value) => value || "Campaign"),
+  title: z
+    .string()
+    .trim()
+    .max(80)
+    .transform((value) => value || "Campaign"),
+  detail: z
+    .string()
+    .trim()
+    .max(120)
+    .transform((value) => value || "Shop now"),
   active: z.boolean().optional().default(true),
 });
+
+function firstIssueMessage(error: z.ZodError) {
+  return error.issues[0]?.message ?? "Invalid input";
+}
 
 function revalidateHero() {
   revalidatePath("/");
@@ -34,7 +67,7 @@ function revalidateHero() {
 }
 
 export async function updateHeroSettings(
-  input: unknown
+  input: unknown,
 ): Promise<ActionResult> {
   await requirePermission("content.manage");
   await ensureHeroDefaults();
@@ -43,7 +76,7 @@ export async function updateHeroSettings(
   if (!parsed.success) {
     return {
       success: false,
-      error: parsed.error.issues[0]?.message ?? "Invalid hero settings",
+      error: firstIssueMessage(parsed.error),
     };
   }
 
@@ -64,7 +97,7 @@ export async function createHeroSlide(input: unknown): Promise<ActionResult> {
   if (!parsed.success) {
     return {
       success: false,
-      error: parsed.error.issues[0]?.message ?? "Invalid slide",
+      error: firstIssueMessage(parsed.error),
     };
   }
 
@@ -87,7 +120,7 @@ export async function createHeroSlide(input: unknown): Promise<ActionResult> {
 
 export async function updateHeroSlide(
   id: string,
-  input: unknown
+  input: unknown,
 ): Promise<ActionResult> {
   await requirePermission("content.manage");
 
@@ -95,14 +128,28 @@ export async function updateHeroSlide(
   if (!parsed.success) {
     return {
       success: false,
-      error: parsed.error.issues[0]?.message ?? "Invalid slide",
+      error: firstIssueMessage(parsed.error),
     };
+  }
+
+  const existing = await prisma.heroSlide.findUnique({ where: { id } });
+  if (!existing) {
+    return { success: false, error: "Slide not found." };
   }
 
   await prisma.heroSlide.update({
     where: { id },
     data: parsed.data,
   });
+
+  // Remove replaced image from Cloudinary / local uploads
+  if (existing.image && existing.image !== parsed.data.image) {
+    try {
+      await deleteUploadedFile(existing.image);
+    } catch (error) {
+      console.error("Failed to delete old hero slide image", error);
+    }
+  }
 
   revalidateHero();
   return { success: true, message: "Slide updated" };
@@ -111,14 +158,40 @@ export async function updateHeroSlide(
 export async function deleteHeroSlide(id: string): Promise<ActionResult> {
   await requirePermission("content.manage");
 
-  await prisma.heroSlide.delete({ where: { id } });
+  if (!id?.trim()) {
+    return { success: false, error: "Invalid slide id." };
+  }
 
-  revalidateHero();
-  return { success: true, message: "Slide deleted" };
+  try {
+    const existing = await prisma.heroSlide.findUnique({ where: { id } });
+    if (!existing) {
+      revalidateHero();
+      return { success: false, error: "Slide not found or already deleted." };
+    }
+
+    await prisma.heroSlide.delete({ where: { id } });
+
+    if (existing.image) {
+      try {
+        await deleteUploadedFile(existing.image);
+      } catch (error) {
+        console.error("Failed to delete hero slide image from storage", error);
+      }
+    }
+
+    revalidateHero();
+    return { success: true, message: "Slide deleted" };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to delete slide",
+    };
+  }
 }
 
 export async function reorderHeroSlides(
-  orderedIds: string[]
+  orderedIds: string[],
 ): Promise<ActionResult> {
   await requirePermission("content.manage");
 
@@ -127,8 +200,8 @@ export async function reorderHeroSlides(
       prisma.heroSlide.update({
         where: { id },
         data: { sortOrder: index },
-      })
-    )
+      }),
+    ),
   );
 
   revalidateHero();

@@ -241,3 +241,26 @@
     box-shadow: 0 0 0 4px rgba(226, 55, 68, 0);
   }
 }
+
+@keyframes profile-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.profile-hero {
+  animation: profile-fade-up 0.55s ease-out both;
+}
+
+.profile-panel {
+  animation: profile-fade-up 0.65s ease-out 0.08s both;
+}
+
+.profile-form {
+  animation: profile-fade-up 0.7s ease-out 0.14s both;
+}

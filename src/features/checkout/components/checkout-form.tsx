@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { placeCodOrder } from "@/features/checkout/actions";
+import { placeCodOrder, applyCheckoutCoupon } from "@/features/checkout/actions";
 import {
   ADDRESS_LABEL_OPTIONS,
   checkoutAddressSchema,
@@ -95,6 +95,12 @@ export function CheckoutForm({
   const [saveAddress, setSaveAddress] = useState(!isGuest);
   const [notes, setNotes] = useState("");
   const [guestEmail, setGuestEmail] = useState(defaultEmail);
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discount: number;
+  } | null>(null);
+  const [couponPending, setCouponPending] = useState(false);
   const [labelType, setLabelType] = useState<AddressLabelOption>("Home");
   const [customLabel, setCustomLabel] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -108,7 +114,10 @@ export function CheckoutForm({
   });
 
   const subtotal = getSubtotal();
-  const totals = useMemo(() => calculateOrderTotals(subtotal), [subtotal]);
+  const totals = useMemo(
+    () => calculateOrderTotals(subtotal, appliedCoupon?.discount ?? 0),
+    [subtotal, appliedCoupon?.discount]
+  );
 
   const clearError = (field: string) => {
     setErrors((prev) => {
@@ -192,6 +201,7 @@ export function CheckoutForm({
         notes,
         saveAddress: isGuest ? false : saveAddress,
         guestEmail: guestEmail.trim() || undefined,
+        couponCode: appliedCoupon?.code || couponInput.trim() || undefined,
         ...(useNewAddress || isGuest
           ? {
               newAddress: {
@@ -222,6 +232,41 @@ export function CheckoutForm({
       );
       router.refresh();
     });
+  }
+
+  async function onApplyCoupon() {
+    const code = couponInput.trim();
+    if (!code) {
+      setErrors((prev) => ({ ...prev, couponCode: "Enter a coupon code" }));
+      return;
+    }
+
+    setCouponPending(true);
+    clearError("couponCode");
+    try {
+      const result = await applyCheckoutCoupon(code, subtotal);
+      if (!result.success) {
+        setAppliedCoupon(null);
+        setErrors((prev) => ({
+          ...prev,
+          couponCode: result.error || "Invalid coupon",
+        }));
+        toast.error(result.error);
+        return;
+      }
+
+      setAppliedCoupon(result.data!);
+      setCouponInput(result.data!.code);
+      toast.success(result.message || "Coupon applied");
+    } finally {
+      setCouponPending(false);
+    }
+  }
+
+  function onRemoveCoupon() {
+    setAppliedCoupon(null);
+    setCouponInput("");
+    clearError("couponCode");
   }
 
   const inputErrorClass = (field: string) =>
@@ -591,6 +636,63 @@ export function CheckoutForm({
 
         <Separator />
 
+        <div className="space-y-2">
+          <Label htmlFor="couponCode">Coupon code</Label>
+          <div className="flex gap-2">
+            <Input
+              id="couponCode"
+              value={couponInput}
+              placeholder="Enter code"
+              disabled={Boolean(appliedCoupon) || couponPending || pending}
+              className={cn(
+                "uppercase",
+                inputErrorClass("couponCode")
+              )}
+              aria-invalid={Boolean(errors.couponCode)}
+              onChange={(event) => {
+                setCouponInput(event.target.value);
+                clearError("couponCode");
+                if (appliedCoupon) setAppliedCoupon(null);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  if (!appliedCoupon) void onApplyCoupon();
+                }
+              }}
+            />
+            {appliedCoupon ? (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pending}
+                onClick={onRemoveCoupon}
+              >
+                Remove
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={couponPending || pending || !couponInput.trim()}
+                onClick={() => void onApplyCoupon()}
+              >
+                {couponPending ? "…" : "Apply"}
+              </Button>
+            )}
+          </div>
+          <FieldError message={errors.couponCode} />
+          {appliedCoupon ? (
+            <p className="text-xs text-secondary">
+              {appliedCoupon.code} applied (−{formatPrice(appliedCoupon.discount)})
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Optional — leave blank if you don’t have a promo code.
+            </p>
+          )}
+        </div>
+
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Subtotal</span>
@@ -602,6 +704,12 @@ export function CheckoutForm({
               {totals.shipping === 0 ? "Free" : formatPrice(totals.shipping)}
             </span>
           </div>
+          {totals.discount > 0 ? (
+            <div className="flex justify-between text-secondary">
+              <span>Discount</span>
+              <span>−{formatPrice(totals.discount)}</span>
+            </div>
+          ) : null}
           {totals.subtotal < FREE_SHIPPING_THRESHOLD ? (
             <p className="text-xs text-secondary">
               Add {formatPrice(FREE_SHIPPING_THRESHOLD - totals.subtotal)} more

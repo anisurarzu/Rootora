@@ -4,6 +4,7 @@ import {
   placeOrderInputSchema,
   type PlaceOrderInput,
 } from "@/features/checkout/schema";
+import { resolveCoupon } from "@/features/checkout/coupon";
 import {
   calculateOrderTotals,
   generateOrderNumber,
@@ -172,7 +173,13 @@ export async function placeCodOrder(
       });
     }
 
-    const totals = calculateOrderTotals(subtotal);
+    const couponResult = await resolveCoupon(input.couponCode, subtotal);
+    if (!couponResult.success) {
+      return { success: false, error: couponResult.error };
+    }
+
+    const appliedCoupon = couponResult.coupon;
+    const totals = calculateOrderTotals(subtotal, appliedCoupon?.discount ?? 0);
     const accessToken = createAccessToken();
     const guestEmail = input.guestEmail?.trim() || null;
 
@@ -233,6 +240,24 @@ export async function placeCodOrder(
           );
         }
 
+        if (line.variantId) {
+          const variant = await tx.productVariant.findFirst({
+            where: { id: line.variantId, productId: line.productId },
+            select: { id: true, stockCount: true },
+          });
+
+          if (!variant || variant.stockCount < line.quantity) {
+            throw new Error(
+              "Selected size is no longer available. Please update your cart."
+            );
+          }
+
+          await tx.productVariant.update({
+            where: { id: variant.id },
+            data: { stockCount: variant.stockCount - line.quantity },
+          });
+        }
+
         const nextStock = product.stockCount - line.quantity;
         await tx.product.update({
           where: { id: line.productId },
@@ -281,6 +306,7 @@ export async function placeCodOrder(
           discount: totals.discount,
           total: totals.total,
           addressId: finalAddressId,
+          couponId: appliedCoupon?.id ?? null,
           notes: input.notes?.trim() || null,
           items: {
             create: lineItems.map((line) => ({
@@ -303,6 +329,13 @@ export async function placeCodOrder(
           total: true,
         },
       });
+
+      if (appliedCoupon) {
+        await tx.coupon.update({
+          where: { id: appliedCoupon.id },
+          data: { usedCount: { increment: 1 } },
+        });
+      }
 
       if (userId) {
         await tx.cartItem.deleteMany({ where: { userId } });

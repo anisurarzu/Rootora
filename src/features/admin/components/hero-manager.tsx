@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
   Card,
@@ -22,21 +21,8 @@ import {
   createHeroSlide,
   deleteHeroSlide,
   reorderHeroSlides,
-  updateHeroSettings,
   updateHeroSlide,
 } from "@/features/admin/actions/hero";
-
-export type HeroSettingsForm = {
-  brandName: string;
-  tagline: string;
-  headline: string;
-  description: string;
-  ctaPrimaryLabel: string;
-  ctaPrimaryHref: string;
-  ctaSecondaryLabel: string;
-  ctaSecondaryHref: string;
-  backgroundImage: string;
-};
 
 export type HeroSlideRow = {
   id: string;
@@ -50,7 +36,6 @@ export type HeroSlideRow = {
 };
 
 type HeroManagerProps = {
-  settings: HeroSettingsForm;
   slides: HeroSlideRow[];
   canManage: boolean;
 };
@@ -64,26 +49,12 @@ const emptySlide = {
   active: true,
 };
 
-export function HeroManager({ settings, slides, canManage }: HeroManagerProps) {
+export function HeroManager({ slides, canManage }: HeroManagerProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [form, setForm] = useState(settings);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [slideForm, setSlideForm] = useState(emptySlide);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-
-  function saveSettings() {
-    if (!canManage) return;
-    startTransition(async () => {
-      const result = await updateHeroSettings(form);
-      if (!result.success) {
-        toast.error(result.error);
-        return;
-      }
-      toast.success(result.message);
-      router.refresh();
-    });
-  }
 
   function startCreateSlide() {
     setEditingId(null);
@@ -104,6 +75,14 @@ export function HeroManager({ settings, slides, canManage }: HeroManagerProps) {
 
   function saveSlide() {
     if (!canManage) return;
+    if (!slideForm.image.trim()) {
+      toast.error("Please upload a campaign image before saving");
+      return;
+    }
+    if (!slideForm.href.trim()) {
+      toast.error("Link is required");
+      return;
+    }
     startTransition(async () => {
       const result = editingId
         ? await updateHeroSlide(editingId, slideForm)
@@ -141,13 +120,18 @@ export function HeroManager({ settings, slides, canManage }: HeroManagerProps) {
 
   function onDelete() {
     if (!deleteId || !canManage) return;
+    const idToDelete = deleteId;
     startTransition(async () => {
-      const result = await deleteHeroSlide(deleteId);
-      setDeleteId(null);
+      const result = await deleteHeroSlide(idToDelete);
       if (!result.success) {
         toast.error(result.error);
         return;
       }
+      if (editingId === idToDelete) {
+        setEditingId(null);
+        setSlideForm(emptySlide);
+      }
+      setDeleteId(null);
       toast.success(result.message);
       router.refresh();
     });
@@ -156,125 +140,12 @@ export function HeroManager({ settings, slides, canManage }: HeroManagerProps) {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle>Hero content</CardTitle>
-          <CardDescription>
-            Left side text, buttons, and full background image for the homepage
-            hero.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <FormField label="Brand name">
-            <Input
-              value={form.brandName}
-              disabled={!canManage || pending}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, brandName: e.target.value }))
-              }
-            />
-          </FormField>
-          <FormField label="Tagline">
-            <Input
-              value={form.tagline}
-              disabled={!canManage || pending}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, tagline: e.target.value }))
-              }
-            />
-          </FormField>
-          <FormField label="Headline" className="sm:col-span-2">
-            <Input
-              value={form.headline}
-              disabled={!canManage || pending}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, headline: e.target.value }))
-              }
-            />
-          </FormField>
-          <FormField label="Description" className="sm:col-span-2">
-            <Textarea
-              rows={3}
-              value={form.description}
-              disabled={!canManage || pending}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, description: e.target.value }))
-              }
-            />
-          </FormField>
-          <FormField label="Primary CTA label">
-            <Input
-              value={form.ctaPrimaryLabel}
-              disabled={!canManage || pending}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  ctaPrimaryLabel: e.target.value,
-                }))
-              }
-            />
-          </FormField>
-          <FormField label="Primary CTA link">
-            <Input
-              value={form.ctaPrimaryHref}
-              disabled={!canManage || pending}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  ctaPrimaryHref: e.target.value,
-                }))
-              }
-            />
-          </FormField>
-          <FormField label="Secondary CTA label">
-            <Input
-              value={form.ctaSecondaryLabel}
-              disabled={!canManage || pending}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  ctaSecondaryLabel: e.target.value,
-                }))
-              }
-            />
-          </FormField>
-          <FormField label="Secondary CTA link">
-            <Input
-              value={form.ctaSecondaryHref}
-              disabled={!canManage || pending}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  ctaSecondaryHref: e.target.value,
-                }))
-              }
-            />
-          </FormField>
-          <FormField label="Background image" className="sm:col-span-2">
-            <SingleMediaField
-              value={form.backgroundImage}
-              onChange={(url) =>
-                setForm((prev) => ({ ...prev, backgroundImage: url }))
-              }
-            />
-          </FormField>
-          {canManage ? (
-            <div className="sm:col-span-2">
-              <Button onClick={saveSettings} disabled={pending}>
-                {pending ? "Saving…" : "Save hero content"}
-              </Button>
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
           <div>
-            <CardTitle>Campaign slider</CardTitle>
+            <CardTitle>Hero slider</CardTitle>
             <CardDescription>
-              Active slides appear in the homepage hero carousel. Upload
-              Daraz-style campaign banners, set the link, and toggle Active to
-              show or hide each slide on the live storefront.
+              Homepage hero shows these campaign banners only. Upload image +
+              link. Deleting a slide also removes its image from Cloudinary.
             </CardDescription>
           </div>
           {canManage ? (
@@ -287,25 +158,28 @@ export function HeroManager({ settings, slides, canManage }: HeroManagerProps) {
         <CardContent className="space-y-6">
           {canManage ? (
             <div className="grid gap-4 rounded-xl border border-border p-4 sm:grid-cols-2">
-              <FormField label="Label" className="sm:col-span-1">
+              <FormField label="Label (optional)" className="sm:col-span-1">
                 <Input
                   value={slideForm.label}
+                  placeholder="Flash Sale"
                   onChange={(e) =>
                     setSlideForm((prev) => ({ ...prev, label: e.target.value }))
                   }
                 />
               </FormField>
-              <FormField label="Title">
+              <FormField label="Title (optional)">
                 <Input
                   value={slideForm.title}
+                  placeholder="Campaign title"
                   onChange={(e) =>
                     setSlideForm((prev) => ({ ...prev, title: e.target.value }))
                   }
                 />
               </FormField>
-              <FormField label="Detail" className="sm:col-span-2">
+              <FormField label="Detail (optional)" className="sm:col-span-2">
                 <Input
                   value={slideForm.detail}
+                  placeholder="Short description"
                   onChange={(e) =>
                     setSlideForm((prev) => ({
                       ...prev,
@@ -314,9 +188,10 @@ export function HeroManager({ settings, slides, canManage }: HeroManagerProps) {
                   }
                 />
               </FormField>
-              <FormField label="Link">
+              <FormField label="Link (required)">
                 <Input
                   value={slideForm.href}
+                  placeholder="/shop"
                   onChange={(e) =>
                     setSlideForm((prev) => ({ ...prev, href: e.target.value }))
                   }
@@ -335,7 +210,7 @@ export function HeroManager({ settings, slides, canManage }: HeroManagerProps) {
                   </span>
                 </div>
               </FormField>
-              <FormField label="Image" className="sm:col-span-2">
+              <FormField label="Image (required)" className="sm:col-span-2">
                 <SingleMediaField
                   value={slideForm.image}
                   onChange={(url) =>
@@ -360,71 +235,79 @@ export function HeroManager({ settings, slides, canManage }: HeroManagerProps) {
             </div>
           ) : null}
 
-          <ul className="space-y-3">
-            {slides.map((slide, index) => (
-              <li
-                key={slide.id}
-                className="flex flex-col gap-3 rounded-xl border border-border p-3 sm:flex-row sm:items-center"
-              >
-                <div
-                  className="relative h-20 w-16 shrink-0 overflow-hidden rounded-lg bg-muted bg-cover bg-center"
-                  style={{ backgroundImage: `url(${slide.image})` }}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                    {slide.label}
-                    {!slide.active ? " · Hidden" : ""}
-                  </p>
-                  <p className="font-medium text-heading">{slide.title}</p>
-                  <p className="truncate text-sm text-muted-foreground">
-                    {slide.detail} · {slide.href}
-                  </p>
-                </div>
-                {canManage ? (
-                  <div className="flex flex-wrap gap-1">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      disabled={pending || index === 0}
-                      onClick={() => moveSlide(slide.id, -1)}
-                    >
-                      <ArrowUp className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      disabled={pending || index === slides.length - 1}
-                      onClick={() => moveSlide(slide.id, 1)}
-                    >
-                      <ArrowDown className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => startEditSlide(slide)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => setDeleteId(slide.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+          {slides.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-border bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
+              No campaign slides yet. Add one to show banners on the homepage.
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {slides.map((slide, index) => (
+                <li
+                  key={slide.id}
+                  className="flex flex-col gap-3 rounded-xl border border-border p-3 sm:flex-row sm:items-center"
+                >
+                  <div
+                    className="relative h-20 w-16 shrink-0 overflow-hidden rounded-lg bg-muted bg-cover bg-center"
+                    style={{ backgroundImage: `url(${slide.image})` }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                      {slide.label}
+                      {!slide.active ? " · Hidden" : ""}
+                    </p>
+                    <p className="font-medium text-heading">{slide.title}</p>
+                    <p className="truncate text-sm text-muted-foreground">
+                      {slide.detail} · {slide.href}
+                    </p>
                   </div>
-                ) : null}
-              </li>
-            ))}
-          </ul>
+                  {canManage ? (
+                    <div className="flex flex-wrap gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        disabled={pending || index === 0}
+                        onClick={() => moveSlide(slide.id, -1)}
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        disabled={pending || index === slides.length - 1}
+                        onClick={() => moveSlide(slide.id, 1)}
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        disabled={pending}
+                        onClick={() => startEditSlide(slide)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        disabled={pending}
+                        onClick={() => setDeleteId(slide.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
         </CardContent>
       </Card>
 
       <ConfirmDialog
         open={Boolean(deleteId)}
-        onOpenChange={(open) => !open && setDeleteId(null)}
+        onOpenChange={(open) => !open && !pending && setDeleteId(null)}
         title="Delete hero slide?"
-        description="This offer card will be removed from the homepage hero."
+        description="This banner will be removed from the homepage and its image deleted from Cloudinary."
         confirmLabel="Delete"
         tone="danger"
         onConfirm={onDelete}

@@ -1,5 +1,6 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { FeaturedCategories } from "@/features/home/featured-categories";
+import { getFlashSaleContent } from "@/features/home/flash-sale";
 import { getHeroContent } from "@/features/home/hero";
 import { HeroSection } from "@/features/home/hero-section";
 import { InstagramGallery } from "@/features/home/instagram-gallery";
@@ -13,7 +14,6 @@ import {
   getStorefrontCategories,
   getStorefrontProducts,
   getStorefrontProductsByFlag,
-  getStorefrontSaleProducts,
 } from "@/features/products/storefront-queries";
 import { siteConfig } from "@/config/site";
 
@@ -22,20 +22,20 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const [
     heroContent,
+    flashSale,
     categories,
     seasonalProducts,
     bestSellers,
     allProducts,
     organicProducts,
-    flashSaleProducts,
   ] = await Promise.all([
     getHeroContent(),
+    getFlashSaleContent(),
     getStorefrontCategories({ onlyWithProducts: true }),
     getStorefrontProductsByFlag("seasonal"),
     getStorefrontProductsByFlag("bestSeller"),
     getStorefrontProducts(),
     getStorefrontProductsByFlag("organic", 4),
-    getStorefrontSaleProducts(6),
   ]);
 
   const jsonLd = {
@@ -58,7 +58,7 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <HeroSection content={heroContent} flashSaleProducts={flashSaleProducts} />
+      <HeroSection content={heroContent} flashSale={flashSale} />
       <FeaturedCategories categories={categories} />
 
       {bestSellers.length > 0 && (

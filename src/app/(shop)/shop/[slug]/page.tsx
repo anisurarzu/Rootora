@@ -132,6 +132,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
           <div>
             <div className="flex flex-wrap gap-2">
+              {product.newArrival && <Badge>New</Badge>}
               {product.organic && <Badge variant="success">Organic Certified</Badge>}
               {product.freshToday && <Badge variant="accent">Fresh Today</Badge>}
               <Badge variant="outline">{product.category.name}</Badge>

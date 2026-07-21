@@ -1,15 +1,5 @@
 import type { Metadata } from "next";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { updateProfile } from "@/features/account/actions";
+import { ProfileForm } from "@/features/account/components/profile-form";
 import { requireSession } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 
@@ -23,72 +13,62 @@ export default async function ProfilePage() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { name: true, phone: true, email: true },
+    select: { name: true, phone: true, email: true, image: true },
   });
 
+  const name = user?.name ?? session.user.name ?? "";
+  const email = user?.email ?? session.user.email ?? "";
+  const phone = user?.phone ?? "";
+  const image = user?.image ?? null;
+
   return (
-    <div>
-      <header className="mb-8">
-        <h1 className="font-heading text-3xl font-semibold text-heading">
-          Profile
-        </h1>
-        <p className="mt-2 text-muted-foreground">
-          Update your personal information.
-        </p>
+    <div className="profile-page space-y-8">
+      <header className="profile-hero relative overflow-hidden rounded-2xl border border-border bg-surface px-6 py-8 sm:px-8">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-90"
+          aria-hidden
+          style={{
+            background:
+              "radial-gradient(ellipse 80% 70% at 0% 0%, color-mix(in oklab, var(--primary) 18%, transparent), transparent 55%), radial-gradient(ellipse 60% 50% at 100% 100%, color-mix(in oklab, var(--primary) 10%, transparent), transparent 50%)",
+          }}
+        />
+        <div className="relative">
+          <p className="font-button text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+            Account
+          </p>
+          <h1 className="mt-2 font-heading text-3xl font-semibold text-heading sm:text-4xl">
+            Profile
+          </h1>
+          <p className="mt-2 max-w-xl text-muted-foreground">
+            Keep your photo and contact details up to date for smoother
+            checkout and order updates.
+          </p>
+        </div>
       </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Personal details</CardTitle>
-          <CardDescription>
-            Your email cannot be changed here. Contact support if you need help.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form action={updateProfile} className="max-w-md space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={user?.email ?? session.user.email}
-                disabled
-                aria-describedby="email-help"
-              />
-              <p id="email-help" className="text-xs text-muted-foreground">
-                Email is managed through your login credentials.
-              </p>
-            </div>
+      <section
+        aria-labelledby="profile-details-heading"
+        className="profile-panel rounded-2xl border border-border bg-surface p-6 shadow-soft sm:p-8"
+      >
+        <div className="mb-8">
+          <h2
+            id="profile-details-heading"
+            className="font-heading text-xl font-semibold text-heading"
+          >
+            Personal details
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Your photo appears in the account menu across the store.
+          </p>
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="name">Full name</Label>
-              <Input
-                id="name"
-                name="name"
-                type="text"
-                required
-                defaultValue={user?.name ?? session.user.name}
-                autoComplete="name"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
-                name="phone"
-                type="tel"
-                defaultValue={user?.phone ?? ""}
-                placeholder="+880 1XXX-XXXXXX"
-                autoComplete="tel"
-              />
-            </div>
-
-            <Button type="submit">Save changes</Button>
-          </form>
-        </CardContent>
-      </Card>
+        <ProfileForm
+          name={name}
+          email={email}
+          phone={phone}
+          image={image}
+        />
+      </section>
     </div>
   );
 }

@@ -31,6 +31,13 @@ export function ProductActions({ product }: ProductActionsProps) {
     );
   }, [product.variants]);
 
+  const colorLabel = useMemo(() => {
+    const colorVariant = (product.variants ?? []).find(
+      (variant) => variant.name.toLowerCase() === "color"
+    );
+    return colorVariant?.value ?? null;
+  }, [product.variants]);
+
   const requiresSize = sizeVariants.length > 0;
   const [selectedSizeId, setSelectedSizeId] = useState<string | null>(null);
   const selectedSize = sizeVariants.find((variant) => variant.id === selectedSizeId);
@@ -86,6 +93,12 @@ export function ProductActions({ product }: ProductActionsProps) {
 
   return (
     <div className="mt-8 space-y-4">
+      {colorLabel ? (
+        <div className="flex items-center gap-2 text-sm">
+          <span className="font-button font-medium text-heading">Color</span>
+          <span className="text-muted-foreground">{colorLabel}</span>
+        </div>
+      ) : null}
       {requiresSize ? (
         <div>
           <div className="mb-2 flex items-center justify-between gap-3">

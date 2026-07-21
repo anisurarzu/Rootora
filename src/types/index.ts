@@ -47,6 +47,7 @@ export interface Product {
   nutrition?: Record<string, string>;
   featured?: boolean;
   bestSeller?: boolean;
+  newArrival?: boolean;
   freshToday?: boolean;
   seasonal?: boolean;
   variants?: ProductVariantOption[];
