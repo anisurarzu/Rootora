@@ -17,6 +17,9 @@ interface ProductCardProps {
   priority?: boolean;
 }
 
+const badgeBase =
+  "inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.06em] text-white sm:text-[10px]";
+
 export function ProductCard({ product, className, priority }: ProductCardProps) {
   const addToCart = useCartStore((s) => s.addItem);
   const { toggleItem, isInWishlist } = useWishlistStore();
@@ -55,21 +58,23 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
   return (
     <article
       className={cn(
-        "group relative flex h-full w-full flex-col overflow-hidden rounded bg-white ring-1 ring-black/[0.06] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/10 hover:ring-primary/25",
-        !product.inStock && "opacity-90",
+        "group relative flex h-full w-full flex-col overflow-hidden rounded-md border border-border/80 bg-white",
+        "transition-[border-color,box-shadow] duration-300 ease-out",
+        "hover:border-border hover:shadow-soft",
+        !product.inStock && "opacity-85",
         className
       )}
     >
       <Link href={`/shop/${product.slug}`} className="flex h-full flex-col">
-        <div className="relative aspect-[11/10] shrink-0 overflow-hidden bg-gradient-to-b from-muted/10 via-white to-muted/15">
+        <div className="relative aspect-[11/10] shrink-0 overflow-hidden bg-[#f7f6f2]">
           {showFullProduct ? (
-            <div className="absolute inset-1.5 sm:inset-2">
+            <div className="absolute inset-2 sm:inset-2.5">
               <ProductImage
                 src={product.images[0]}
                 alt={product.name}
                 priority={priority}
                 fit="contain"
-                className="object-top transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                className="object-top transition-transform duration-500 ease-out group-hover:scale-[1.03]"
               />
             </div>
           ) : (
@@ -78,41 +83,38 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
               alt={product.name}
               priority={priority}
               fit="cover"
-              className="transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+              className="transition-transform duration-500 ease-out group-hover:scale-[1.03]"
             />
           )}
 
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-
-          <div className="absolute left-1.5 top-1.5 z-[1] flex flex-col items-start gap-1 sm:left-2 sm:top-2">
+          <div className="absolute left-2 top-2 z-[1] flex flex-col items-start gap-1">
             {product.newArrival ? (
-              <span className="rounded-sm bg-heading px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wide text-white shadow-sm sm:text-[11px]">
-                New
-              </span>
+              <span className={cn(badgeBase, "bg-heading")}>New</span>
             ) : null}
             {hasDiscount ? (
-              <span className="rounded-sm bg-gradient-to-r from-destructive to-orange-500 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white shadow-sm sm:text-[11px]">
-                -{discountPct}%
+              <span className={cn(badgeBase, "bg-destructive")}>
+                −{discountPct}%
               </span>
             ) : null}
             {product.organic ? (
-              <span className="inline-flex items-center gap-0.5 rounded-sm bg-primary px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary-foreground sm:text-[11px]">
+              <span className={cn(badgeBase, "bg-primary")}>
                 <Leaf className="h-2.5 w-2.5" aria-hidden />
                 Organic
               </span>
             ) : null}
             {product.bestSeller ? (
-              <span className="rounded-sm bg-amber-500 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white sm:text-[11px]">
-                Best
-              </span>
+              <span className={cn(badgeBase, "bg-[#9a7b2f]")}>Best</span>
             ) : null}
           </div>
 
           <button
             type="button"
             className={cn(
-              "absolute right-1.5 top-1.5 z-[1] flex h-7 w-7 items-center justify-center rounded-full border border-white/70 bg-white/90 text-muted-foreground shadow-sm backdrop-blur-sm transition-all hover:scale-105 hover:bg-white hover:text-destructive sm:right-2 sm:top-2 sm:h-8 sm:w-8",
-              inWishlist && "text-destructive"
+              "absolute right-2 top-2 z-[1] flex h-7 w-7 items-center justify-center rounded-full",
+              "border border-border/60 bg-white/95 text-muted-foreground shadow-sm",
+              "transition-colors duration-200 hover:border-border hover:text-destructive",
+              "sm:h-8 sm:w-8",
+              inWishlist && "border-destructive/30 text-destructive"
             )}
             onClick={handleWishlist}
             aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
@@ -123,17 +125,17 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
           </button>
 
           {!product.inStock ? (
-            <div className="absolute inset-0 z-[2] flex items-center justify-center bg-background/60 backdrop-blur-[2px]">
-              <span className="rounded-full bg-heading px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white sm:text-xs">
+            <div className="absolute inset-0 z-[2] flex items-center justify-center bg-white/70 backdrop-blur-[1px]">
+              <span className="rounded bg-heading px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-white">
                 Sold out
               </span>
             </div>
           ) : null}
 
-          <div className="absolute inset-x-0 bottom-0 z-[1] hidden translate-y-full p-2 transition-transform duration-300 group-hover:translate-y-0 md:block">
+          <div className="absolute inset-x-0 bottom-0 z-[1] hidden p-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100 md:block">
             <Button
               size="sm"
-              className="h-8 w-full rounded text-xs font-semibold shadow-md"
+              className="h-8 w-full rounded-sm text-xs font-semibold tracking-wide"
               onClick={handleAddToCart}
               disabled={!product.inStock}
             >
@@ -143,51 +145,55 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col gap-1 px-2.5 pb-2 pt-1 sm:px-3 sm:pb-2.5">
+        <div className="flex flex-1 flex-col gap-1.5 px-2.5 pb-2.5 pt-2.5 sm:px-3 sm:pb-3 sm:pt-3">
+          <p className="truncate text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+            {product.category.name}
+          </p>
+
+          <h3 className="line-clamp-2 min-h-[2.5lh] font-heading text-[13px] font-semibold leading-snug tracking-tight text-heading transition-colors duration-200 group-hover:text-primary sm:text-sm">
+            <ProductTitle name={product.name} size="card" />
+          </h3>
+
           {product.reviewCount > 0 ? (
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground sm:text-xs">
+            <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
               <Star
                 className="h-3 w-3 fill-amber-400 text-amber-400"
                 aria-hidden
               />
-              <span className="font-semibold text-heading">
+              <span className="font-medium tabular-nums text-heading">
                 {product.rating.toFixed(1)}
               </span>
-              <span className="text-muted-foreground/75">
+              <span className="text-muted-foreground/70">
                 ({product.reviewCount})
               </span>
             </div>
-          ) : null}
+          ) : (
+            <div className="h-[16px]" aria-hidden />
+          )}
 
-          <h3 className="line-clamp-2 min-h-[2lh] font-heading text-xs font-semibold leading-snug tracking-tight text-heading transition-colors group-hover:text-primary sm:text-sm">
-            <ProductTitle name={product.name} size="card" />
-          </h3>
-
-          <div className="mt-auto flex min-h-[2.5rem] items-end justify-between gap-1.5 sm:min-h-[2.75rem]">
+          <div className="mt-auto flex items-end justify-between gap-2 pt-1">
             <div className="min-w-0">
-              <p className="truncate font-button text-sm font-bold tabular-nums tracking-tight text-primary sm:text-base">
-                {formatPrice(product.price)}
-              </p>
-              <div className="mt-1 flex min-h-[16px] flex-wrap items-center gap-1.5">
+              <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+                <p className="font-button text-[15px] font-bold tabular-nums tracking-tight text-heading sm:text-base">
+                  {formatPrice(product.price)}
+                </p>
                 {hasDiscount ? (
-                  <>
-                    <p className="truncate text-[11px] text-muted-foreground line-through sm:text-xs">
-                      {formatPrice(product.originalPrice!)}
-                    </p>
-                    {savings > 0 ? (
-                      <span className="rounded-sm bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 sm:text-[11px]">
-                        Save {formatPrice(savings)}
-                      </span>
-                    ) : null}
-                  </>
+                  <p className="text-[11px] tabular-nums text-muted-foreground line-through sm:text-xs">
+                    {formatPrice(product.originalPrice!)}
+                  </p>
                 ) : null}
               </div>
+              {hasDiscount && savings > 0 ? (
+                <p className="mt-0.5 text-[10px] font-medium text-primary sm:text-[11px]">
+                  Save {formatPrice(savings)}
+                </p>
+              ) : null}
             </div>
 
             <Button
               size="icon"
-              variant="secondary"
-              className="h-8 w-8 shrink-0 rounded-full shadow-sm transition-transform hover:scale-105 md:hidden"
+              variant="outline"
+              className="h-8 w-8 shrink-0 rounded-full border-border/80 bg-white transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground md:hidden"
               onClick={handleAddToCart}
               disabled={!product.inStock}
               aria-label={`Add ${product.name} to cart`}
