@@ -32,9 +32,14 @@ const navItems = [
 type AdminNavProps = {
   /** Desktop green sidebar vs mobile light strip */
   variant?: "sidebar" | "light";
+  /** Unread / waiting support chats */
+  supportAttentionCount?: number;
 };
 
-export function AdminNav({ variant = "sidebar" }: AdminNavProps) {
+export function AdminNav({
+  variant = "sidebar",
+  supportAttentionCount = 0,
+}: AdminNavProps) {
   const pathname = usePathname();
   const isSidebar = variant === "sidebar";
 
@@ -45,6 +50,8 @@ export function AdminNav({ variant = "sidebar" }: AdminNavProps) {
           const isActive = exact
             ? pathname === href
             : pathname === href || pathname.startsWith(`${href}/`);
+          const showBadge =
+            href === "/admin/support" && supportAttentionCount > 0;
 
           return (
             <li key={href}>
@@ -60,11 +67,28 @@ export function AdminNav({ variant = "sidebar" }: AdminNavProps) {
                   !isSidebar &&
                     (isActive
                       ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-primary/10 hover:text-primary")
+                      : "text-muted-foreground hover:bg-primary/10 hover:text-primary"),
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                {label}
+                <span className="flex-1">{label}</span>
+                {showBadge ? (
+                  <span
+                    className={cn(
+                      "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none",
+                      isSidebar && isActive
+                        ? "bg-primary text-white"
+                        : isSidebar
+                          ? "bg-white text-primary"
+                          : isActive
+                            ? "bg-white/20 text-primary-foreground"
+                            : "bg-primary text-primary-foreground",
+                    )}
+                    aria-label={`${supportAttentionCount} support chats need attention`}
+                  >
+                    {supportAttentionCount > 9 ? "9+" : supportAttentionCount}
+                  </span>
+                ) : null}
               </Link>
             </li>
           );

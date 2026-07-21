@@ -487,8 +487,21 @@ export async function listAdminConversations() {
     createdAt: c.createdAt.toISOString(),
     messageCount: c._count.messages,
     preview: c.messages[0]?.body ?? "",
+    lastSender: c.messages[0]?.sender ?? null,
     assignedAgent: c.assignedAgent,
   }));
+}
+
+/** Conversations waiting on an agent reply (badge count). */
+export function countSupportAttention(
+  conversations: Array<{ status: string; lastSender: string | null }>,
+) {
+  return conversations.filter(
+    (c) =>
+      c.status === SupportConversationStatus.WAITING_AGENT ||
+      (c.status === SupportConversationStatus.ACTIVE &&
+        c.lastSender === "VISITOR"),
+  ).length;
 }
 
 export async function getAdminConversation(id: string) {
