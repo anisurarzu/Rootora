@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,10 +40,14 @@ export default async function AdminOrderDetailPage({
       address: true,
       items: {
         include: {
-          product: { select: { id: true, name: true, slug: true, thumbnail: true } },
+          product: {
+            select: { id: true, name: true, slug: true, thumbnail: true },
+          },
         },
       },
-      coupon: { select: { code: true, discountType: true, discountValue: true } },
+      coupon: {
+        select: { code: true, discountType: true, discountValue: true },
+      },
     },
   });
 
@@ -73,33 +78,67 @@ export default async function AdminOrderDetailPage({
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.85fr)]">
         <Card>
           <CardHeader>
-            <CardTitle>Items</CardTitle>
+            <CardTitle>Ordered products ({order.items.length})</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {order.items.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-3"
-              >
-                <div>
-                  <Link
-                    href={`/admin/products/${item.product.id}/edit`}
-                    className="font-medium text-heading hover:underline"
+            {order.items.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-border bg-muted/20 px-3 py-4 text-sm text-muted-foreground">
+                No products linked to this order.
+              </p>
+            ) : (
+              order.items.map((item) => {
+                const productName = item.product?.name ?? "Deleted product";
+                const thumb = item.product?.thumbnail;
+                return (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-3"
                   >
-                    {item.product.name}
-                  </Link>
-                  <p className="text-xs text-muted-foreground">
-                    Qty {item.quantity}
-                  </p>
-                </div>
-                <p className="font-medium">
-                  {formatPrice(Number(item.price) * item.quantity)}
-                </p>
-              </div>
-            ))}
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted">
+                        {thumb ? (
+                          <Image
+                            src={thumb}
+                            alt={productName}
+                            fill
+                            className="object-cover"
+                            sizes="48px"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground">
+                            N/A
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        {item.product ? (
+                          <Link
+                            href={`/admin/products/${item.product.id}/edit`}
+                            className="block truncate font-medium text-heading hover:underline"
+                          >
+                            {productName}
+                          </Link>
+                        ) : (
+                          <p className="truncate font-medium text-heading">
+                            {productName}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          Qty {item.quantity} · {formatPrice(Number(item.price))}{" "}
+                          each
+                        </p>
+                      </div>
+                    </div>
+                    <p className="shrink-0 font-medium">
+                      {formatPrice(Number(item.price) * item.quantity)}
+                    </p>
+                  </div>
+                );
+              })
+            )}
             <dl className="space-y-2 border-t border-border pt-4 text-sm">
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Subtotal</dt>

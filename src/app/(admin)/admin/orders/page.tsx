@@ -23,28 +23,45 @@ export default async function AdminOrdersPage() {
     include: {
       user: { select: { name: true, email: true } },
       address: { select: { district: true } },
-      items: { select: { id: true } },
+      items: {
+        include: {
+          product: { select: { name: true } },
+        },
+      },
     },
   });
 
-  const rows: AdminOrderRow[] = orders.map((order) => ({
-    id: order.id,
-    orderNumber: order.orderNumber,
-    createdAt: order.createdAt.toISOString(),
-    status: order.status,
-    paymentStatus: order.paymentStatus,
-    total: Number(order.total),
-    guestEmail: order.guestEmail,
-    itemCount: order.items.length,
-    districtHint: order.address.district,
-    pathaoConsignmentId: order.pathaoConsignmentId,
-    pathaoStatus: order.pathaoStatus,
-    pathaoDeliveryFee:
-      order.pathaoDeliveryFee != null
-        ? Number(order.pathaoDeliveryFee)
-        : null,
-    user: order.user,
-  }));
+  const rows: AdminOrderRow[] = orders.map((order) => {
+    const names = order.items
+      .map((item) => item.product?.name)
+      .filter((name): name is string => Boolean(name));
+    const productSummary =
+      names.length === 0
+        ? "No products"
+        : names.length === 1
+          ? names[0]
+          : `${names[0]} +${names.length - 1} more`;
+
+    return {
+      id: order.id,
+      orderNumber: order.orderNumber,
+      createdAt: order.createdAt.toISOString(),
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      total: Number(order.total),
+      guestEmail: order.guestEmail,
+      itemCount: order.items.length,
+      productSummary,
+      districtHint: order.address.district,
+      pathaoConsignmentId: order.pathaoConsignmentId,
+      pathaoStatus: order.pathaoStatus,
+      pathaoDeliveryFee:
+        order.pathaoDeliveryFee != null
+          ? Number(order.pathaoDeliveryFee)
+          : null,
+      user: order.user,
+    };
+  });
 
   return (
     <div>

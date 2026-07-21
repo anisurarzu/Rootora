@@ -34,6 +34,7 @@ export type AdminOrderRow = {
   total: number;
   guestEmail: string | null;
   itemCount: number;
+  productSummary: string;
   districtHint: string | null;
   pathaoConsignmentId: string | null;
   pathaoStatus: string | null;
@@ -105,17 +106,17 @@ export function AdminOrdersTable({ orders }: AdminOrdersTableProps) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[1100px] table-fixed text-sm">
+      <table className="w-full min-w-[1180px] table-fixed text-sm">
         <thead>
           <tr className="border-b border-border text-left">
             <th className="w-[140px] px-4 py-3 font-button font-medium text-muted-foreground">
               Order
             </th>
-            <th className="w-[180px] px-4 py-3 font-button font-medium text-muted-foreground">
-              Customer
+            <th className="w-[200px] px-4 py-3 font-button font-medium text-muted-foreground">
+              Products
             </th>
-            <th className="w-[64px] px-4 py-3 font-button font-medium text-muted-foreground">
-              Items
+            <th className="w-[160px] px-4 py-3 font-button font-medium text-muted-foreground">
+              Customer
             </th>
             <th className="w-[100px] px-4 py-3 font-button font-medium text-muted-foreground">
               Payment
@@ -156,15 +157,20 @@ export function AdminOrdersTable({ orders }: AdminOrdersTableProps) {
                   </p>
                 </td>
                 <td className="px-4 py-4">
+                  <p className="truncate font-medium text-heading">
+                    {order.productSummary}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {order.itemCount} item{order.itemCount === 1 ? "" : "s"}
+                  </p>
+                </td>
+                <td className="px-4 py-4">
                   <span className="block truncate text-heading">
                     {order.user?.name ?? "Guest"}
                   </span>
                   <span className="block truncate text-muted-foreground">
                     {order.user?.email ?? order.guestEmail ?? "—"}
                   </span>
-                </td>
-                <td className="whitespace-nowrap px-4 py-4 text-muted-foreground">
-                  {order.itemCount}
                 </td>
                 <td className="whitespace-nowrap px-4 py-4">
                   <Badge variant="outline">{order.paymentStatus}</Badge>

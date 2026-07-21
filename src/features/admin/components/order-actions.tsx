@@ -108,16 +108,16 @@ export function OrderActions({
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4">
         <div className="space-y-2">
           <p className="font-button text-sm font-medium">Fulfillment status</p>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Select
               value={currentStatus}
               onValueChange={(value) => setCurrentStatus(value as OrderStatus)}
               disabled={!canManage}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full sm:min-w-0 sm:flex-1">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -131,6 +131,7 @@ export function OrderActions({
             <Button
               type="button"
               variant="outline"
+              className="shrink-0 sm:w-auto"
               disabled={!canManage}
               onClick={() =>
                 startTransition(async () => {
@@ -149,7 +150,9 @@ export function OrderActions({
             >
               Save
             </Button>
-            {canManage ? (
+          </div>
+          {canManage ? (
+            <div className="pt-1">
               <PathaoCourierButton
                 orderId={orderId}
                 orderStatus={status}
@@ -159,13 +162,13 @@ export function OrderActions({
                 pathaoDeliveryFee={pathaoDeliveryFee}
                 size="default"
               />
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="space-y-2">
           <p className="font-button text-sm font-medium">Payment status</p>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Select
               value={currentPayment}
               onValueChange={(value) =>
@@ -173,7 +176,7 @@ export function OrderActions({
               }
               disabled={!canManage}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full sm:min-w-0 sm:flex-1">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -187,6 +190,7 @@ export function OrderActions({
             <Button
               type="button"
               variant="outline"
+              className="shrink-0 sm:w-auto"
               disabled={!canManage}
               onClick={() =>
                 startTransition(async () => {
