@@ -48,7 +48,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         />
 
         <div className="flex flex-col gap-5 lg:flex-row lg:gap-6">
-          <aside className="hidden w-56 shrink-0 lg:block xl:w-64">
+          <aside className="hidden w-44 shrink-0 lg:block xl:w-52">
             <Suspense
               fallback={
                 <div className="h-96 animate-pulse rounded-xl bg-muted" />
