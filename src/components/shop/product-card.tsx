@@ -61,7 +61,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
       )}
     >
       <Link href={`/shop/${product.slug}`} className="flex h-full flex-col">
-        <div className="relative aspect-[5/4] shrink-0 overflow-hidden bg-gradient-to-b from-muted/10 via-white to-muted/15">
+        <div className="relative aspect-[11/10] shrink-0 overflow-hidden bg-gradient-to-b from-muted/10 via-white to-muted/15">
           {showFullProduct ? (
             <div className="absolute inset-1.5 sm:inset-2">
               <ProductImage
@@ -84,7 +84,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
 
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-          <div className="absolute left-1.5 top-1.5 z-[1] flex max-w-[calc(100%-2.75rem)] flex-wrap gap-1 sm:left-2 sm:top-2">
+          <div className="absolute left-1.5 top-1.5 z-[1] flex flex-col items-start gap-1 sm:left-2 sm:top-2">
             {product.newArrival ? (
               <span className="rounded-sm bg-heading px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wide text-white shadow-sm sm:text-[11px]">
                 New
