@@ -63,7 +63,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               <ShopToolbar total={filteredProducts.length} />
             </Suspense>
             {filteredProducts.length > 0 ? (
-              <ProductGrid className="mt-3 lg:grid-cols-5">
+              <ProductGrid className="mt-3 lg:grid-cols-5 xl:grid-cols-5">
                 {filteredProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
