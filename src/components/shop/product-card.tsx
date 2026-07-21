@@ -58,7 +58,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
   return (
     <article
       className={cn(
-        "group relative flex h-full w-full flex-col overflow-hidden rounded-md border border-border/80 bg-white",
+        "group relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-border/80 bg-white",
         "transition-[border-color,box-shadow] duration-300 ease-out",
         "hover:border-border hover:shadow-soft",
         !product.inStock && "opacity-85",
@@ -145,12 +145,12 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col gap-1.5 px-2.5 pb-2.5 pt-2.5 sm:px-3 sm:pb-3 sm:pt-3">
+        <div className="flex flex-1 flex-col gap-1 px-2.5 pb-2.5 pt-2 sm:px-3 sm:pb-3 sm:pt-2.5">
           <p className="truncate text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
             {product.category.name}
           </p>
 
-          <h3 className="line-clamp-2 min-h-[2.5lh] font-heading text-[13px] font-semibold leading-snug tracking-tight text-heading transition-colors duration-200 group-hover:text-primary sm:text-sm">
+          <h3 className="line-clamp-2 font-heading text-[14px] font-semibold leading-snug tracking-tight text-heading transition-colors duration-200 group-hover:text-primary sm:text-[15px]">
             <ProductTitle name={product.name} size="card" />
           </h3>
 
@@ -167,11 +167,9 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
                 ({product.reviewCount})
               </span>
             </div>
-          ) : (
-            <div className="h-[16px]" aria-hidden />
-          )}
+          ) : null}
 
-          <div className="mt-auto flex items-end justify-between gap-2 pt-1">
+          <div className="flex items-end justify-between gap-2 pt-0.5">
             <div className="min-w-0">
               <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
                 <p className="font-button text-[15px] font-bold tabular-nums tracking-tight text-heading sm:text-base">
