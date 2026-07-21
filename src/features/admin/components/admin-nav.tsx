@@ -52,7 +52,7 @@ export function AdminNav({ variant = "sidebar" }: AdminNavProps) {
                 href={href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2.5 font-button text-sm font-medium transition-colors",
+                  "flex items-center gap-2.5 rounded-md px-2.5 py-2 font-button text-sm font-medium transition-colors",
                   isSidebar &&
                     (isActive
                       ? "bg-white text-primary shadow-none"

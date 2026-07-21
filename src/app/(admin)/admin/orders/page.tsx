@@ -25,7 +25,7 @@ export default async function AdminOrdersPage() {
       address: { select: { district: true } },
       items: {
         include: {
-          product: { select: { name: true } },
+          product: { select: { name: true, thumbnail: true } },
         },
       },
     },
@@ -41,6 +41,9 @@ export default async function AdminOrdersPage() {
         : names.length === 1
           ? names[0]
           : `${names[0]} +${names.length - 1} more`;
+    const productThumbnails = order.items
+      .map((item) => item.product?.thumbnail)
+      .filter((thumb): thumb is string => Boolean(thumb));
 
     return {
       id: order.id,
@@ -52,6 +55,7 @@ export default async function AdminOrdersPage() {
       guestEmail: order.guestEmail,
       itemCount: order.items.length,
       productSummary,
+      productThumbnails,
       districtHint: order.address.district,
       pathaoConsignmentId: order.pathaoConsignmentId,
       pathaoStatus: order.pathaoStatus,

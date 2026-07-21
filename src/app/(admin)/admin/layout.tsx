@@ -11,8 +11,8 @@ export default async function AdminLayout({
 
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="hidden w-64 shrink-0 bg-primary md:flex md:flex-col">
-        <div className="border-b border-white/15 px-6 py-5">
+      <aside className="hidden w-52 shrink-0 bg-primary md:flex md:flex-col">
+        <div className="border-b border-white/15 px-4 py-4">
           <Link href="/admin" className="block">
             <span className="font-heading text-lg font-semibold text-white">
               ROOTORA
@@ -22,10 +22,10 @@ export default async function AdminLayout({
             </span>
           </Link>
         </div>
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-3">
           <AdminNav variant="sidebar" />
         </div>
-        <div className="border-t border-white/15 p-4">
+        <div className="border-t border-white/15 p-3">
           <Link
             href="/"
             className="font-button text-sm text-white/75 transition-colors hover:text-white"

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -35,6 +36,7 @@ export type AdminOrderRow = {
   guestEmail: string | null;
   itemCount: number;
   productSummary: string;
+  productThumbnails: string[];
   districtHint: string | null;
   pathaoConsignmentId: string | null;
   pathaoStatus: string | null;
@@ -106,28 +108,28 @@ export function AdminOrdersTable({ orders }: AdminOrdersTableProps) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[1180px] table-fixed text-sm">
+      <table className="w-full min-w-[980px] text-sm">
         <thead>
           <tr className="border-b border-border text-left">
-            <th className="w-[140px] px-4 py-3 font-button font-medium text-muted-foreground">
+            <th className="whitespace-nowrap px-2 py-2.5 font-button font-medium text-muted-foreground">
               Order
             </th>
-            <th className="w-[200px] px-4 py-3 font-button font-medium text-muted-foreground">
+            <th className="min-w-[180px] px-2 py-2.5 font-button font-medium text-muted-foreground">
               Products
             </th>
-            <th className="w-[160px] px-4 py-3 font-button font-medium text-muted-foreground">
+            <th className="min-w-[120px] px-2 py-2.5 font-button font-medium text-muted-foreground">
               Customer
             </th>
-            <th className="w-[100px] px-4 py-3 font-button font-medium text-muted-foreground">
+            <th className="whitespace-nowrap px-2 py-2.5 font-button font-medium text-muted-foreground">
               Payment
             </th>
-            <th className="w-[100px] px-4 py-3 font-button font-medium text-muted-foreground">
+            <th className="whitespace-nowrap px-2 py-2.5 font-button font-medium text-muted-foreground">
               Total
             </th>
-            <th className="w-[280px] px-4 py-3 font-button font-medium text-muted-foreground">
+            <th className="whitespace-nowrap px-2 py-2.5 font-button font-medium text-muted-foreground">
               Status
             </th>
-            <th className="w-[120px] px-4 py-3 font-button font-medium text-muted-foreground">
+            <th className="whitespace-nowrap px-2 py-2.5 font-button font-medium text-muted-foreground">
               Actions
             </th>
           </tr>
@@ -137,6 +139,7 @@ export function AdminOrdersTable({ orders }: AdminOrdersTableProps) {
             const isSaving =
               savingId === order.id ||
               (pending && deleteTarget?.id === order.id);
+            const thumbs = order.productThumbnails ?? [];
             return (
               <tr
                 key={`${order.id}-${order.status}`}
@@ -145,26 +148,55 @@ export function AdminOrdersTable({ orders }: AdminOrdersTableProps) {
                   isSaving && "bg-muted/40"
                 )}
               >
-                <td className="px-4 py-4 font-medium text-heading">
+                <td className="whitespace-nowrap px-2 py-2.5 font-medium text-heading">
                   <Link
                     href={`/admin/orders/${order.id}`}
-                    className="block truncate whitespace-nowrap hover:underline"
+                    className="hover:underline"
                   >
                     #{order.orderNumber}
                   </Link>
-                  <p className="truncate text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     {formatBdDate(order.createdAt)}
                   </p>
                 </td>
-                <td className="px-4 py-4">
-                  <p className="truncate font-medium text-heading">
-                    {order.productSummary}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {order.itemCount} item{order.itemCount === 1 ? "" : "s"}
-                  </p>
+                <td className="px-2 py-2.5">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <div className="flex shrink-0 -space-x-1.5">
+                      {(thumbs.length > 0 ? thumbs.slice(0, 3) : [null]).map(
+                        (thumb, index) => (
+                          <div
+                            key={`${order.id}-thumb-${index}`}
+                            className="relative h-8 w-8 overflow-hidden rounded-md border border-border bg-muted"
+                          >
+                            {thumb ? (
+                              <Image
+                                src={thumb}
+                                alt=""
+                                fill
+                                className="object-cover"
+                                sizes="32px"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-[9px] text-muted-foreground">
+                                N/A
+                              </div>
+                            )}
+                          </div>
+                        ),
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-heading">
+                        {order.productSummary}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {order.itemCount} item
+                        {order.itemCount === 1 ? "" : "s"}
+                      </p>
+                    </div>
+                  </div>
                 </td>
-                <td className="px-4 py-4">
+                <td className="max-w-[140px] px-2 py-2.5">
                   <span className="block truncate text-heading">
                     {order.user?.name ?? "Guest"}
                   </span>
@@ -172,25 +204,25 @@ export function AdminOrdersTable({ orders }: AdminOrdersTableProps) {
                     {order.user?.email ?? order.guestEmail ?? "—"}
                   </span>
                 </td>
-                <td className="whitespace-nowrap px-4 py-4">
+                <td className="whitespace-nowrap px-2 py-2.5">
                   <Badge variant="outline">{order.paymentStatus}</Badge>
                 </td>
-                <td className="whitespace-nowrap px-4 py-4 font-medium">
+                <td className="whitespace-nowrap px-2 py-2.5 font-medium">
                   {formatPrice(order.total)}
                 </td>
-                <td className="px-4 py-4">
+                <td className="px-2 py-2.5">
                   {isSaving ? (
                     <div
-                      className="flex flex-nowrap items-center gap-2"
+                      className="flex flex-nowrap items-center gap-1.5"
                       aria-busy="true"
                       aria-live="polite"
                     >
-                      <Skeleton className="h-9 w-28 shrink-0" />
-                      <Skeleton className="h-8 w-14 shrink-0" />
-                      <Skeleton className="h-8 w-20 shrink-0" />
+                      <Skeleton className="h-8 w-24 shrink-0" />
+                      <Skeleton className="h-8 w-12 shrink-0" />
+                      <Skeleton className="h-8 w-16 shrink-0" />
                     </div>
                   ) : (
-                    <div className="flex flex-nowrap items-center gap-2">
+                    <div className="flex flex-nowrap items-center gap-1.5">
                       <label htmlFor={`status-${order.id}`} className="sr-only">
                         Status for order {order.orderNumber}
                       </label>
@@ -203,7 +235,7 @@ export function AdminOrdersTable({ orders }: AdminOrdersTableProps) {
                             [order.id]: event.target.value as OrderStatus,
                           }))
                         }
-                        className="h-9 w-[120px] shrink-0 rounded-lg border border-input bg-surface px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="h-8 w-[110px] shrink-0 rounded-lg border border-input bg-surface px-1.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         {orderStatuses.map((status) => (
                           <option key={status} value={status}>
@@ -215,7 +247,7 @@ export function AdminOrdersTable({ orders }: AdminOrdersTableProps) {
                         type="button"
                         size="sm"
                         variant="outline"
-                        className="shrink-0"
+                        className="h-8 shrink-0 px-2"
                         onClick={() => handleSave(order.id)}
                       >
                         Save
@@ -231,16 +263,21 @@ export function AdminOrdersTable({ orders }: AdminOrdersTableProps) {
                     </div>
                   )}
                 </td>
-                <td className="px-4 py-4">
-                  <div className="flex flex-nowrap items-center gap-1">
-                    <Button asChild size="sm" variant="ghost" className="shrink-0">
+                <td className="whitespace-nowrap px-2 py-2.5">
+                  <div className="flex flex-nowrap items-center gap-0.5">
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 shrink-0 px-2"
+                    >
                       <Link href={`/admin/orders/${order.id}`}>View</Link>
                     </Button>
                     <Button
                       type="button"
                       size="sm"
                       variant="ghost"
-                      className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      className="h-8 shrink-0 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
                       disabled={isSaving}
                       onClick={() => setDeleteTarget(order)}
                       aria-label={`Delete order ${order.orderNumber}`}
