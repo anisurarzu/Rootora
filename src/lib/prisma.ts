@@ -6,7 +6,7 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 /** Bump when Prisma schema shape changes so hot reload drops stale clients. */
-const PRISMA_SCHEMA_VERSION = 13;
+const PRISMA_SCHEMA_VERSION = 15;
 
 function createPrismaClient() {
   return new PrismaClient({
@@ -30,7 +30,7 @@ function hasModel(
 }
 
 /** Runtime field check — catches stale engines that still pass version bumps. */
-function orderHasStatusCode(client: PrismaClient): boolean {
+function orderHasFields(client: PrismaClient, names: string[]): boolean {
   try {
     const fields = (
       client as unknown as {
@@ -39,7 +39,9 @@ function orderHasStatusCode(client: PrismaClient): boolean {
         };
       }
     )._runtimeDataModel?.models?.Order?.fields;
-    return Boolean(fields?.some((field) => field.name === "statusCode"));
+    if (!fields?.length) return false;
+    const present = new Set(fields.map((field) => field.name).filter(Boolean));
+    return names.every((name) => present.has(name));
   } catch {
     return false;
   }
@@ -54,7 +56,7 @@ function isCurrentClient(client: PrismaClient) {
     hasModel(client, "orderStatusEvent") &&
     hasModel(client, "supportConversation") &&
     hasModel(client, "supportMessage") &&
-    orderHasStatusCode(client) &&
+    orderHasFields(client, ["statusCode", "pathaoConsignmentId"]) &&
     globalForPrisma.prismaSchemaVersion === PRISMA_SCHEMA_VERSION
   );
 }

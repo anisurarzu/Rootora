@@ -21,6 +21,7 @@ import {
   updatePaymentStatus,
 } from "@/features/admin/actions/orders";
 import { ConfirmDialog } from "@/features/admin/products/components/confirm-dialog";
+import { PathaoCourierButton } from "@/features/shipping/pathao/pathao-courier-button";
 
 const orderStatuses: OrderStatus[] = [
   "PENDING",
@@ -46,6 +47,10 @@ type OrderActionsProps = {
   paymentStatus: PaymentStatus;
   notes: string | null;
   canManage: boolean;
+  districtHint?: string;
+  pathaoConsignmentId: string | null;
+  pathaoStatus: string | null;
+  pathaoDeliveryFee: number | null;
 };
 
 export function OrderActions({
@@ -55,6 +60,10 @@ export function OrderActions({
   paymentStatus,
   notes,
   canManage,
+  districtHint,
+  pathaoConsignmentId,
+  pathaoStatus,
+  pathaoDeliveryFee,
 }: OrderActionsProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -140,6 +149,17 @@ export function OrderActions({
             >
               Save
             </Button>
+            {canManage ? (
+              <PathaoCourierButton
+                orderId={orderId}
+                orderStatus={status}
+                districtHint={districtHint}
+                pathaoConsignmentId={pathaoConsignmentId}
+                pathaoStatus={pathaoStatus}
+                pathaoDeliveryFee={pathaoDeliveryFee}
+                size="default"
+              />
+            ) : null}
           </div>
         </div>
 

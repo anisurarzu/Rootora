@@ -22,6 +22,7 @@ export default async function AdminOrdersPage() {
     orderBy: { createdAt: "desc" },
     include: {
       user: { select: { name: true, email: true } },
+      address: { select: { district: true } },
       items: { select: { id: true } },
     },
   });
@@ -35,6 +36,13 @@ export default async function AdminOrdersPage() {
     total: Number(order.total),
     guestEmail: order.guestEmail,
     itemCount: order.items.length,
+    districtHint: order.address.district,
+    pathaoConsignmentId: order.pathaoConsignmentId,
+    pathaoStatus: order.pathaoStatus,
+    pathaoDeliveryFee:
+      order.pathaoDeliveryFee != null
+        ? Number(order.pathaoDeliveryFee)
+        : null,
     user: order.user,
   }));
 

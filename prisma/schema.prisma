@@ -364,6 +364,16 @@ model Order {
   notes         String?
   /// Soft-delete marker: 0 = visible, 255 = removed from UI (row kept in DB)
   statusCode    Int            @default(0)
+  /// Pathao Courier integration
+  pathaoConsignmentId String?
+  pathaoDeliveryFee   Decimal? @db.Decimal(10, 2)
+  pathaoStatus        String?
+  pathaoTrackingUrl   String?
+  pathaoStoreId       Int?
+  pathaoCityId        Int?
+  pathaoZoneId        Int?
+  pathaoAreaId        Int?
+  pathaoSyncedAt      DateTime?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   items         OrderItem[]
@@ -373,6 +383,7 @@ model Order {
   @@index([orderNumber])
   @@index([accessToken])
   @@index([statusCode])
+  @@index([pathaoConsignmentId])
   @@map("orders")
 }
 

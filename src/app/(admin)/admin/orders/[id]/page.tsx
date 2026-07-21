@@ -204,6 +204,14 @@ export default async function AdminOrderDetailPage({
                 paymentStatus={order.paymentStatus}
                 notes={order.notes}
                 canManage={canManage}
+                districtHint={order.address.district}
+                pathaoConsignmentId={order.pathaoConsignmentId}
+                pathaoStatus={order.pathaoStatus}
+                pathaoDeliveryFee={
+                  order.pathaoDeliveryFee != null
+                    ? Number(order.pathaoDeliveryFee)
+                    : null
+                }
               />
             </CardContent>
           </Card>

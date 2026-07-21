@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { updateOrderStatus, softDeleteOrder } from "@/features/admin/actions/orders";
 import { ConfirmDialog } from "@/features/admin/products/components/confirm-dialog";
+import { PathaoCourierButton } from "@/features/shipping/pathao/pathao-courier-button";
 import { formatBdDate } from "@/lib/datetime";
 import { cn, formatPrice } from "@/lib/utils";
 import { Trash2 } from "lucide-react";
@@ -33,6 +34,10 @@ export type AdminOrderRow = {
   total: number;
   guestEmail: string | null;
   itemCount: number;
+  districtHint: string | null;
+  pathaoConsignmentId: string | null;
+  pathaoStatus: string | null;
+  pathaoDeliveryFee: number | null;
   user: { name: string | null; email: string } | null;
 };
 
@@ -100,28 +105,28 @@ export function AdminOrdersTable({ orders }: AdminOrdersTableProps) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full min-w-[1100px] table-fixed text-sm">
         <thead>
           <tr className="border-b border-border text-left">
-            <th className="px-6 py-3 font-button font-medium text-muted-foreground">
+            <th className="w-[140px] px-4 py-3 font-button font-medium text-muted-foreground">
               Order
             </th>
-            <th className="px-6 py-3 font-button font-medium text-muted-foreground">
+            <th className="w-[180px] px-4 py-3 font-button font-medium text-muted-foreground">
               Customer
             </th>
-            <th className="px-6 py-3 font-button font-medium text-muted-foreground">
+            <th className="w-[64px] px-4 py-3 font-button font-medium text-muted-foreground">
               Items
             </th>
-            <th className="px-6 py-3 font-button font-medium text-muted-foreground">
+            <th className="w-[100px] px-4 py-3 font-button font-medium text-muted-foreground">
               Payment
             </th>
-            <th className="px-6 py-3 font-button font-medium text-muted-foreground">
+            <th className="w-[100px] px-4 py-3 font-button font-medium text-muted-foreground">
               Total
             </th>
-            <th className="px-6 py-3 font-button font-medium text-muted-foreground">
+            <th className="w-[280px] px-4 py-3 font-button font-medium text-muted-foreground">
               Status
             </th>
-            <th className="px-6 py-3 font-button font-medium text-muted-foreground">
+            <th className="w-[120px] px-4 py-3 font-button font-medium text-muted-foreground">
               Actions
             </th>
           </tr>
@@ -139,46 +144,47 @@ export function AdminOrdersTable({ orders }: AdminOrdersTableProps) {
                   isSaving && "bg-muted/40"
                 )}
               >
-                <td className="px-6 py-4 font-medium text-heading">
+                <td className="px-4 py-4 font-medium text-heading">
                   <Link
                     href={`/admin/orders/${order.id}`}
-                    className="hover:underline"
+                    className="block truncate whitespace-nowrap hover:underline"
                   >
                     #{order.orderNumber}
                   </Link>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="truncate text-xs text-muted-foreground">
                     {formatBdDate(order.createdAt)}
                   </p>
                 </td>
-                <td className="px-6 py-4">
-                  <span className="block text-heading">
+                <td className="px-4 py-4">
+                  <span className="block truncate text-heading">
                     {order.user?.name ?? "Guest"}
                   </span>
-                  <span className="text-muted-foreground">
+                  <span className="block truncate text-muted-foreground">
                     {order.user?.email ?? order.guestEmail ?? "—"}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-muted-foreground">
+                <td className="whitespace-nowrap px-4 py-4 text-muted-foreground">
                   {order.itemCount}
                 </td>
-                <td className="px-6 py-4">
+                <td className="whitespace-nowrap px-4 py-4">
                   <Badge variant="outline">{order.paymentStatus}</Badge>
                 </td>
-                <td className="px-6 py-4 font-medium">
+                <td className="whitespace-nowrap px-4 py-4 font-medium">
                   {formatPrice(order.total)}
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-4 py-4">
                   {isSaving ? (
                     <div
-                      className="flex items-center gap-2"
+                      className="flex flex-nowrap items-center gap-2"
                       aria-busy="true"
                       aria-live="polite"
                     >
-                      <Skeleton className="h-9 w-32" />
-                      <Skeleton className="h-8 w-14" />
+                      <Skeleton className="h-9 w-28 shrink-0" />
+                      <Skeleton className="h-8 w-14 shrink-0" />
+                      <Skeleton className="h-8 w-20 shrink-0" />
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-nowrap items-center gap-2">
                       <label htmlFor={`status-${order.id}`} className="sr-only">
                         Status for order {order.orderNumber}
                       </label>
@@ -191,7 +197,7 @@ export function AdminOrdersTable({ orders }: AdminOrdersTableProps) {
                             [order.id]: event.target.value as OrderStatus,
                           }))
                         }
-                        className="h-9 rounded-lg border border-input bg-surface px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="h-9 w-[120px] shrink-0 rounded-lg border border-input bg-surface px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         {orderStatuses.map((status) => (
                           <option key={status} value={status}>
@@ -203,23 +209,32 @@ export function AdminOrdersTable({ orders }: AdminOrdersTableProps) {
                         type="button"
                         size="sm"
                         variant="outline"
+                        className="shrink-0"
                         onClick={() => handleSave(order.id)}
                       >
                         Save
                       </Button>
+                      <PathaoCourierButton
+                        orderId={order.id}
+                        orderStatus={order.status}
+                        districtHint={order.districtHint ?? undefined}
+                        pathaoConsignmentId={order.pathaoConsignmentId}
+                        pathaoStatus={order.pathaoStatus}
+                        pathaoDeliveryFee={order.pathaoDeliveryFee}
+                      />
                     </div>
                   )}
                 </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-1">
-                    <Button asChild size="sm" variant="ghost">
+                <td className="px-4 py-4">
+                  <div className="flex flex-nowrap items-center gap-1">
+                    <Button asChild size="sm" variant="ghost" className="shrink-0">
                       <Link href={`/admin/orders/${order.id}`}>View</Link>
                     </Button>
                     <Button
                       type="button"
                       size="sm"
                       variant="ghost"
-                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
                       disabled={isSaving}
                       onClick={() => setDeleteTarget(order)}
                       aria-label={`Delete order ${order.orderNumber}`}

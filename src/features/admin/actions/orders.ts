@@ -73,7 +73,11 @@ export async function updateOrderStatus(input: {
   });
 
   revalidate(input.orderId);
-  return { success: true, message: "Order status updated." };
+
+  return {
+    success: true,
+    message: "Order status updated.",
+  };
 }
 
 /** Soft-delete: hide from UI, keep row with statusCode 255. */
