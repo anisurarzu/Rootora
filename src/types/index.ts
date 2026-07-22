@@ -40,6 +40,8 @@ export interface Product {
   tags: string[];
   unit: string;
   origin: string;
+  /** Short origin label for cards, e.g. "Porabari · Tangail" */
+  originBadge?: string;
   brand?: string;
   ingredients?: string[];
   storageInstruction?: string;

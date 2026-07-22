@@ -22,8 +22,10 @@ const badgeBase =
 
 export function ProductCard({ product, className, priority }: ProductCardProps) {
   const addToCart = useCartStore((s) => s.addItem);
-  const { toggleItem, isInWishlist } = useWishlistStore();
-  const inWishlist = isInWishlist(product.id);
+  const toggleItem = useWishlistStore((s) => s.toggleItem);
+  const inWishlist = useWishlistStore((s) =>
+    s.hasHydrated ? s.items.some((item) => item.id === product.id) : false
+  );
   const hasDiscount =
     product.originalPrice && product.originalPrice > product.price;
   const discountPct = hasDiscount
@@ -148,6 +150,9 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
         <div className="flex flex-1 flex-col gap-1 px-2.5 pb-2.5 pt-2 sm:px-3 sm:pb-3 sm:pt-2.5">
           <p className="truncate text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
             {product.category.name}
+            {product.originBadge || product.origin
+              ? ` · ${product.originBadge || product.origin}`
+              : null}
           </p>
 
           <h3 className="line-clamp-2 font-heading text-[14px] font-semibold leading-snug tracking-tight text-heading transition-colors duration-200 group-hover:text-primary sm:text-[15px]">

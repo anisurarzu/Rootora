@@ -57,6 +57,7 @@ function revalidateFlashSale() {
   revalidatePath("/");
   revalidatePath("/admin/homepage");
   revalidatePath("/shop");
+  revalidatePath("/shop/flash-sale");
   revalidatePath("/admin/products");
 }
 

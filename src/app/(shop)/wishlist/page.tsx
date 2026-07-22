@@ -10,7 +10,19 @@ import { Button } from "@/components/ui/button";
 import { useWishlistStore } from "@/features/wishlist/store/wishlist-store";
 
 export default function WishlistPage() {
-  const { items, removeItem } = useWishlistStore();
+  const hasHydrated = useWishlistStore((s) => s.hasHydrated);
+  const items = useWishlistStore((s) => s.items);
+  const removeItem = useWishlistStore((s) => s.removeItem);
+
+  if (!hasHydrated) {
+    return (
+      <MainLayout>
+        <div className="container-rootora section-padding">
+          <div className="h-40 animate-pulse rounded-lg bg-muted" />
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (items.length === 0) {
     return (

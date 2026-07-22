@@ -31,7 +31,9 @@ export function Navbar() {
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchHostRef = useRef<HTMLDivElement>(null);
   const { theme, setTheme } = useTheme();
-  const wishlistCount = useWishlistStore((s) => s.getItemCount());
+  const wishlistCount = useWishlistStore((s) =>
+    s.hasHydrated ? s.items.length : 0
+  );
 
   const shopItem = NAV_ITEMS.find((item) => item.label === "Shop");
 

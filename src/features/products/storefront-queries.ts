@@ -110,6 +110,7 @@ export function mapDbProductToStorefront(product: DbProduct): Product {
     tags: product.tags,
     unit: product.unit ?? "piece",
     origin: product.origin ?? product.country ?? "Bangladesh",
+    originBadge: product.originBadge ?? undefined,
     brand: product.brand ?? undefined,
     ingredients: product.ingredients ?? [],
     storageInstruction: product.storageInstruction ?? undefined,

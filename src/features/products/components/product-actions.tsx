@@ -43,8 +43,10 @@ export function ProductActions({ product }: ProductActionsProps) {
   const selectedSize = sizeVariants.find((variant) => variant.id === selectedSizeId);
 
   const addToCart = useCartStore((s) => s.addItem);
-  const { toggleItem, isInWishlist } = useWishlistStore();
-  const inWishlist = isInWishlist(product.id);
+  const toggleItem = useWishlistStore((s) => s.toggleItem);
+  const inWishlist = useWishlistStore((s) =>
+    s.hasHydrated ? s.items.some((item) => item.id === product.id) : false
+  );
 
   const maxQty = selectedSize?.stockCount ?? product.stockCount;
   const canPurchase =

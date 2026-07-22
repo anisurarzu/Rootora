@@ -42,7 +42,7 @@ export async function getDashboardAnalytics() {
     paymentStatusGroups,
     stockCandidates,
     recentOrders,
-    topProductGroups,
+    topProductRows,
     pendingOrders,
     paidRevenueAllTime,
   ] = await Promise.all([
@@ -101,12 +101,15 @@ export async function getDashboardAnalytics() {
         address: { select: { name: true } },
       },
     }),
-    prisma.orderItem.groupBy({
-      by: ["productId"],
-      _sum: { quantity: true },
-      orderBy: { _sum: { quantity: "desc" } },
-      take: 6,
-    }),
+    // Raw SQL avoids Prisma deserializing nullable productId through a stale client.
+    prisma.$queryRaw<Array<{ productId: string; quantity: number }>>`
+      SELECT "productId", SUM(quantity)::int AS quantity
+      FROM order_items
+      WHERE "productId" IS NOT NULL
+      GROUP BY "productId"
+      ORDER BY quantity DESC
+      LIMIT 6
+    `,
     prisma.order.count({
       where: {
         ...activeOrderWhere,
@@ -118,6 +121,11 @@ export async function getDashboardAnalytics() {
       _sum: { total: true },
     }),
   ]);
+
+  const topProductGroups = topProductRows.map((row) => ({
+    productId: row.productId,
+    _sum: { quantity: Number(row.quantity) },
+  }));
 
   const lowStockCandidates = stockCandidates
     .filter((product) => product.stockCount <= product.lowStockAlert)

@@ -4,6 +4,9 @@ import type { Product } from "@/types";
 
 interface WishlistState {
   items: Product[];
+  /** False until localStorage rehydration finishes (avoids SSR mismatch). */
+  hasHydrated: boolean;
+  setHasHydrated: (value: boolean) => void;
   addItem: (product: Product) => void;
   removeItem: (productId: string) => void;
   toggleItem: (product: Product) => void;
@@ -15,6 +18,9 @@ export const useWishlistStore = create<WishlistState>()(
   persist(
     (set, get) => ({
       items: [],
+      hasHydrated: false,
+
+      setHasHydrated: (value) => set({ hasHydrated: value }),
 
       addItem: (product) => {
         set((state) => {
@@ -45,6 +51,12 @@ export const useWishlistStore = create<WishlistState>()(
 
       getItemCount: () => get().items.length,
     }),
-    { name: "rootora-wishlist" }
+    {
+      name: "rootora-wishlist",
+      partialize: (state) => ({ items: state.items }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
+    }
   )
 );
