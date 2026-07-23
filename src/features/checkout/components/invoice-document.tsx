@@ -57,7 +57,7 @@ export function InvoiceDocument({
               <div className="mt-4 space-y-0.5 text-[12px] leading-5 text-neutral-600">
                 <p>{COMPANY.address}</p>
                 <p>{COMPANY.email}</p>
-                <p>{COMPANY.phone}</p>
+                {COMPANY.phone ? <p>{COMPANY.phone}</p> : null}
                 <p>{COMPANY.website}</p>
               </div>
             </div>

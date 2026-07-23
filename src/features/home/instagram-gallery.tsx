@@ -62,7 +62,7 @@ export function InstagramGallery() {
             className="inline-flex items-center gap-2 font-button text-sm font-medium text-primary hover:underline"
           >
             <InstagramIcon className="h-4 w-4" />
-            @rootora on Instagram
+            @shoprootora on Instagram
           </Link>
         </p>
       </div>

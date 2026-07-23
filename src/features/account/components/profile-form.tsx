@@ -109,7 +109,7 @@ export function ProfileForm({ name, email, phone, image }: ProfileFormProps) {
             disabled={busy}
             onClick={() => fileRef.current?.click()}
             className={cn(
-              "group relative h-28 w-28 overflow-hidden rounded-full border-2 border-primary/20 bg-primary/10 shadow-soft transition-all duration-300",
+              "group relative h-28 w-28 cursor-pointer overflow-hidden rounded-full border-2 border-primary/20 bg-primary/10 shadow-soft transition-all duration-300",
               "hover:border-primary/40 hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               uploading && "pointer-events-none opacity-80",
             )}

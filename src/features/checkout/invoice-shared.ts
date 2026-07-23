@@ -1,5 +1,6 @@
 import { formatPrice } from "@/lib/utils";
 import { formatBdDate, type DateInput } from "@/lib/datetime";
+import { siteConfig } from "@/config/site";
 import type { InvoiceOrder } from "@/features/checkout/invoice-types";
 
 export type { InvoiceOrder } from "@/features/checkout/invoice-types";
@@ -17,10 +18,10 @@ export function formatInvoiceMoney(amount: number | string) {
 }
 
 export const COMPANY = {
-  name: "ROOTORA",
-  tagline: "Naturally Bangladeshi",
-  address: "Dhaka, Bangladesh",
-  email: "hello@shoprootora.com",
-  phone: "+880 1700-000000",
+  name: siteConfig.name,
+  tagline: siteConfig.tagline.replace(/\.$/, ""),
+  address: siteConfig.contact.address,
+  email: siteConfig.contact.email,
+  phone: siteConfig.contact.phone,
   website: "shoprootora.com",
 } as const;

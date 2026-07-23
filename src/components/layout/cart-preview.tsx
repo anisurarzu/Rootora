@@ -35,7 +35,7 @@ export function CartPreview({ className, badgeClassName }: CartPreviewProps) {
   const preview = safeItems.slice(0, 4);
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
@@ -60,7 +60,8 @@ export function CartPreview({ className, badgeClassName }: CartPreviewProps) {
       <DropdownMenuContent
         align="end"
         sideOffset={10}
-        className="w-[min(100vw-2rem,22rem)] rounded-2xl border-black/[0.06] p-0 shadow-lift"
+        collisionPadding={12}
+        className="z-[100] w-[min(100vw-2rem,22rem)] rounded-2xl border-black/[0.06] p-0 shadow-lift"
       >
         <div className="border-b border-black/[0.06] px-4 py-3">
           <p className="font-button text-sm font-semibold text-heading">

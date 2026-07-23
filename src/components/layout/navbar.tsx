@@ -86,11 +86,14 @@ export function Navbar() {
     <>
       <header
         className={cn(
-          "relative sticky top-0 z-50 w-full border-b border-white/10 bg-primary transition-shadow duration-300",
+          "sticky top-0 z-50 w-full border-b border-white/10 bg-primary transition-shadow duration-300",
           isScrolled && "shadow-[0_8px_30px_rgba(15,23,42,0.18)]"
         )}
-        onMouseLeave={scheduleCloseShop}
       >
+        <div
+          className="relative"
+          onMouseLeave={scheduleCloseShop}
+        >
         <nav
           className="container-rootora flex h-14 items-center gap-3 sm:h-16 sm:gap-5 lg:gap-8"
           aria-label="Main navigation"
@@ -252,6 +255,7 @@ export function Navbar() {
             placeholder="Search products..."
             buttonClassName="bg-[#243d28] hover:bg-[#1c3121] text-white"
           />
+        </div>
         </div>
       </header>
 

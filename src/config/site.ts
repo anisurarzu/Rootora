@@ -2,23 +2,24 @@ export const siteConfig = {
   name: "ROOTORA",
   tagline: "Naturally Bangladeshi.",
   description:
-    "Premium Bangladeshi ecommerce marketplace for organic foods, fresh produce, traditional clothing, and artisan handmade products — sourced directly from local farmers.",
-  url: process.env.NEXT_PUBLIC_APP_URL ?? "https://rootora.com",
+    "ROOTORA is a premium Bangladeshi brand dedicated to delivering authentic, high-quality products inspired by our rich heritage. From pure honey to traditional fashion and heritage foods — naturally Bangladeshi.",
+  url: process.env.NEXT_PUBLIC_APP_URL ?? "https://shoprootora.com",
   ogImage: "/og-image.jpg",
   links: {
-    instagram: "https://instagram.com/rootora",
-    facebook: "https://facebook.com/rootora",
-    twitter: "https://twitter.com/rootora",
-    youtube: "https://youtube.com/@rootora",
+    instagram: "https://www.instagram.com/shoprootora/",
+    facebook: "https://www.facebook.com/profile.php?id=61592211598377",
+    linkedin: "https://www.linkedin.com/company/rootora/",
   },
   contact: {
     email: "shoprootora@gmail.com",
-    phone: "+880 1XXX-XXXXXX",
-    address: "Dhaka, Bangladesh",
+    /** Public support number — set when available. */
+    phone: null as string | null,
+    address: "Tangail, Dhaka 1900, Bangladesh",
   },
   currency: "BDT",
   locale: "en-BD",
   timeZone: "Asia/Dhaka",
+  founded: 2026,
   trialNotice: {
     enabled: true,
     launchLabel: "1 August 2026",

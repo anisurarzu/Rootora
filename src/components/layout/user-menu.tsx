@@ -44,17 +44,17 @@ export function UserMenu({ className }: UserMenuProps) {
   const image = user?.image;
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
           aria-label={user ? "Account menu" : "Sign in"}
-          className={cn("h-10 w-10", className)}
+          className={cn("h-10 w-10 cursor-pointer", className)}
         >
           {user ? (
             image ? (
-              <span className="relative h-7 w-7 overflow-hidden rounded-full ring-1 ring-white/40">
+              <span className="relative h-7 w-7 cursor-pointer overflow-hidden rounded-full ring-1 ring-white/40">
                 <Image
                   src={image}
                   alt=""

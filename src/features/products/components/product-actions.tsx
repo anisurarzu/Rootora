@@ -90,7 +90,7 @@ export function ProductActions({ product }: ProductActionsProps) {
       variantId: size?.id,
       variantLabel: size ? `${size.name}: ${size.value}` : undefined,
     });
-    window.location.href = "/checkout";
+    window.location.assign("/checkout");
   };
 
   return (
@@ -189,7 +189,6 @@ export function ProductActions({ product }: ProductActionsProps) {
         </Button>
         <Button
           size="lg"
-          variant="secondary"
           className="h-14 flex-1 rounded-xl px-4 text-base font-semibold sm:h-12 sm:px-8 sm:text-sm sm:font-medium"
           onClick={handleBuyNow}
           disabled={!canPurchase}

@@ -15,8 +15,7 @@ import {
 import {
   FacebookIcon,
   InstagramIcon,
-  TwitterIcon,
-  YoutubeIcon,
+  LinkedInIcon,
 } from "@/components/common/social-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,9 +68,7 @@ export function Footer() {
               {siteConfig.tagline}
             </p>
             <p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground md:text-[15px]">
-              From Bangladeshi farms and artisan workshops to your home —
-              honest sourcing, premium quality, and a marketplace rooted in
-              care.
+              {siteConfig.description}
             </p>
 
             <div className="mt-8 space-y-3">
@@ -87,15 +84,17 @@ export function Footer() {
                   {siteConfig.contact.email}
                 </span>
               </a>
-              <a
-                href={`tel:${siteConfig.contact.phone.replace(/\s/g, "")}`}
-                className="group flex items-start gap-3 text-sm text-muted-foreground transition-colors hover:text-primary"
-              >
-                <Phone className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                <span className="underline-offset-4 group-hover:underline">
-                  {siteConfig.contact.phone}
-                </span>
-              </a>
+              {siteConfig.contact.phone ? (
+                <a
+                  href={`tel:${siteConfig.contact.phone.replace(/\s/g, "")}`}
+                  className="group flex items-start gap-3 text-sm text-muted-foreground transition-colors hover:text-primary"
+                >
+                  <Phone className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <span className="underline-offset-4 group-hover:underline">
+                    {siteConfig.contact.phone}
+                  </span>
+                </a>
+              ) : null}
               <p className="flex items-start gap-3 text-sm text-muted-foreground">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                 {siteConfig.contact.address}
@@ -113,11 +112,8 @@ export function Footer() {
                 <SocialLink href={siteConfig.links.facebook} label="Facebook">
                   <FacebookIcon className="h-4 w-4" />
                 </SocialLink>
-                <SocialLink href={siteConfig.links.twitter} label="Twitter">
-                  <TwitterIcon className="h-4 w-4" />
-                </SocialLink>
-                <SocialLink href={siteConfig.links.youtube} label="YouTube">
-                  <YoutubeIcon className="h-4 w-4" />
+                <SocialLink href={siteConfig.links.linkedin} label="LinkedIn">
+                  <LinkedInIcon className="h-4 w-4" />
                 </SocialLink>
               </div>
             </div>

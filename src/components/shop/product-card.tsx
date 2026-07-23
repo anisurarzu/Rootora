@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, Leaf, ShoppingBag, Star } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Heart, Leaf, ShoppingBag, Star, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ProductImage } from "@/components/shop/product-image";
@@ -21,6 +22,7 @@ const badgeBase =
   "inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.06em] text-white sm:text-[10px]";
 
 export function ProductCard({ product, className, priority }: ProductCardProps) {
+  const router = useRouter();
   const addToCart = useCartStore((s) => s.addItem);
   const toggleItem = useWishlistStore((s) => s.toggleItem);
   const inWishlist = useWishlistStore((s) =>
@@ -42,6 +44,14 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
     if (!product.inStock) return;
     addToCart(product);
     toast.success(`${product.name} added to cart`);
+  };
+
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!product.inStock) return;
+    addToCart(product);
+    router.push("/checkout");
   };
 
   const handleWishlist = (e: React.MouseEvent) => {
@@ -135,15 +145,26 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
           ) : null}
 
           <div className="absolute inset-x-0 bottom-0 z-[1] hidden p-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100 md:block">
-            <Button
-              size="sm"
-              className="h-8 w-full rounded-sm text-xs font-semibold tracking-wide"
-              onClick={handleAddToCart}
-              disabled={!product.inStock}
-            >
-              <ShoppingBag className="mr-1.5 h-3.5 w-3.5" />
-              Add to cart
-            </Button>
+            <div className="grid grid-cols-2 gap-1.5">
+              <Button
+                size="sm"
+                className="h-8 rounded-sm text-[11px] font-semibold tracking-wide"
+                onClick={handleAddToCart}
+                disabled={!product.inStock}
+              >
+                <ShoppingBag className="mr-1 h-3.5 w-3.5" />
+                Add
+              </Button>
+              <Button
+                size="sm"
+                className="h-8 rounded-sm text-[11px] font-semibold tracking-wide"
+                onClick={handleBuyNow}
+                disabled={!product.inStock}
+              >
+                <Zap className="mr-1 h-3.5 w-3.5" />
+                Buy now
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -193,16 +214,26 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
               ) : null}
             </div>
 
-            <Button
-              size="icon"
-              variant="outline"
-              className="h-8 w-8 shrink-0 rounded-full border-border/80 bg-white transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground md:hidden"
-              onClick={handleAddToCart}
-              disabled={!product.inStock}
-              aria-label={`Add ${product.name} to cart`}
-            >
-              <ShoppingBag className="h-3.5 w-3.5" />
-            </Button>
+            <div className="flex shrink-0 items-center gap-1 md:hidden">
+              <Button
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                onClick={handleAddToCart}
+                disabled={!product.inStock}
+                aria-label={`Add ${product.name} to cart`}
+              >
+                <ShoppingBag className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                onClick={handleBuyNow}
+                disabled={!product.inStock}
+                aria-label={`Buy ${product.name} now`}
+              >
+                <Zap className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
         </div>
       </Link>

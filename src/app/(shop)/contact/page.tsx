@@ -47,9 +47,18 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="font-button text-sm font-semibold">Phone</p>
-                    <p className="text-sm text-muted-foreground">
-                      {siteConfig.contact.phone}
-                    </p>
+                    {siteConfig.contact.phone ? (
+                      <a
+                        href={`tel:${siteConfig.contact.phone.replace(/\s/g, "")}`}
+                        className="text-sm text-muted-foreground hover:text-primary"
+                      >
+                        {siteConfig.contact.phone}
+                      </a>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Email us at {siteConfig.contact.email}
+                      </p>
+                    )}
                   </div>
                 </li>
                 <li className="flex items-start gap-4">
