@@ -112,15 +112,15 @@ export default function AboutPage() {
             Join the ROOTORA Community
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-            Explore our farmers, discover seasonal harvests, and experience the
-            best of Bangladesh — delivered to your door.
+            Discover seasonal harvests and experience the best of Bangladesh —
+            delivered to your door.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Button size="lg" asChild>
               <Link href="/shop">Shop Now</Link>
             </Button>
             <Button variant="outline" size="lg" asChild>
-              <Link href="/farmers">Meet Our Farmers</Link>
+              <Link href="/track-order">Track Order</Link>
             </Button>
           </div>
         </div>

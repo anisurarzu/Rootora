@@ -33,8 +33,8 @@ export const DEFAULT_HERO_CONTENT: HeroContent = {
     "Organic foods and artisan goods, sourced directly from local farmers.",
   ctaPrimaryLabel: "Shop collection",
   ctaPrimaryHref: "/shop",
-  ctaSecondaryLabel: "Meet our farmers",
-  ctaSecondaryHref: "/farmers",
+  ctaSecondaryLabel: "Track order",
+  ctaSecondaryHref: "/track-order",
   backgroundImage: "/images/hero-produce-original.png",
   slides: [
     {

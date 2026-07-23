@@ -46,7 +46,7 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   { label: "Blog", href: "/blog" },
-  { label: "Farmers", href: "/farmers" },
+  { label: "Track Order", href: "/track-order" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
 ];
@@ -57,7 +57,7 @@ export const FOOTER_LINKS = {
     { label: "Shop", href: "/shop" },
     { label: "Collections", href: "/collections" },
     { label: "Blog", href: "/blog" },
-    { label: "Farmers", href: "/farmers" },
+    { label: "Track Order", href: "/track-order" },
   ],
   shop: [
     { label: "All Products", href: "/shop" },
@@ -76,7 +76,6 @@ export const FOOTER_LINKS = {
   ],
   company: [
     { label: "About Us", href: "/about" },
-    { label: "Our Farmers", href: "/farmers" },
     { label: "Sustainability", href: "/sustainability" },
     { label: "Careers", href: "/careers" },
     { label: "Contact", href: "/contact" },

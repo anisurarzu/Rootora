@@ -96,7 +96,7 @@ const AUTO_REPLY_RULES: Array<{
   {
     match: /\b(sustainability|farmer|farm|কৃষক)\b/i,
     reply:
-      "ROOTORA sources from local farmers and artisans across Bangladesh. Learn more on /sustainability and meet farmers at /farmers.\n\nAsk about a product (e.g. honey) if you want origin / organic details for that item.",
+      "ROOTORA sources from local farmers and artisans across Bangladesh. Learn more on /sustainability.\n\nAsk about a product (e.g. honey) if you want origin / organic details for that item.",
   },
   {
     match: /\b(invoice|receipt|bill)\b/i,

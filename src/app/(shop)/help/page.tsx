@@ -65,8 +65,8 @@ const helpSections = [
         a: "Organic products carry certification from recognized Bangladeshi and international bodies. We verify certificates during our farm visits.",
       },
       {
-        q: "Can I meet the farmers?",
-        a: "Each product page links to the farmer profile when available. We also publish farmer stories on our blog and social channels.",
+        q: "How do I track my order?",
+        a: "Use Track Order in the menu (or go to /track-order) and enter your order number from the confirmation email or invoice.",
       },
     ],
   },
